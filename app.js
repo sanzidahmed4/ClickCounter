@@ -26,6 +26,7 @@
     HISTORY_MAX_ITEMS: 500,
     HISTORY_DISPLAY_ITEMS: 50,
     ANIMATION_DURATION: 220, // ms
+    SHOW_SAVE_TOAST: false,
     
     MILESTONE_THRESHOLDS: [10, 50, 100, 500, 1000, 5000, 10000],
   };
@@ -85,10 +86,10 @@
     themeTop: document.getElementById('themeTop'),
     themeBottom: document.getElementById('themeBottom'),
     glassOpacity: document.getElementById('glassOpacity'),
-    accentColor: document.getElementById('accentColor'),
     previewTheme: document.getElementById('previewTheme'),
     saveTheme: document.getElementById('saveTheme'),
     resetTheme: document.getElementById('resetTheme'),
+    presetButtons: document.querySelectorAll('.preset-btn'),
     
     // History controls
     historyListEl: document.getElementById('historyList'),
@@ -168,6 +169,7 @@
    * Show auto-save indicator
    */
   function showAutoSaveIndicator() {
+    if (!CONFIG.SHOW_SAVE_TOAST) return;
     const indicator = document.createElement('div');
     indicator.style.cssText = `
       position: fixed;
@@ -225,6 +227,15 @@
     const g = parseInt(h.substring(2, 4), 16);
     const b = parseInt(h.substring(4, 6), 16);
     return `rgba(${r},${g},${b},${Number(alpha)})`;
+  }
+
+  function blendHex(hexA, hexB, ratio = 0.5) {
+    const a = hexA.replace('#', '');
+    const b = hexB.replace('#', '');
+    const r = Math.round(parseInt(a.substring(0, 2), 16) * (1 - ratio) + parseInt(b.substring(0, 2), 16) * ratio);
+    const g = Math.round(parseInt(a.substring(2, 4), 16) * (1 - ratio) + parseInt(b.substring(2, 4), 16) * ratio);
+    const bl = Math.round(parseInt(a.substring(4, 6), 16) * (1 - ratio) + parseInt(b.substring(4, 6), 16) * ratio);
+    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${bl.toString(16).padStart(2, '0')}`;
   }
 
   /**
@@ -645,10 +656,11 @@
 
     const root = document.documentElement;
     if (theme.top) root.style.setProperty('--bg-top', theme.top);
+    root.style.setProperty('--bg-mid-1', theme.mid1 || blendHex(theme.top || '#79bfe9', theme.bottom || '#f0b79a', 0.35));
+    root.style.setProperty('--bg-mid-2', theme.mid2 || blendHex(theme.top || '#79bfe9', theme.bottom || '#f0b79a', 0.7));
     if (theme.bottom) root.style.setProperty('--bg-bottom', theme.bottom);
     if (theme.glass) root.style.setProperty('--glass', hexToRgba('#ffffff', theme.glass));
     if (theme.glass2) root.style.setProperty('--glass-2', hexToRgba('#ffffff', theme.glass2));
-    if (theme.accent) root.style.setProperty('--accent-white', theme.accent);
 
     if (persist) {
       try {
@@ -673,7 +685,6 @@
       if (theme.top) DOM.themeTop.value = theme.top;
       if (theme.bottom) DOM.themeBottom.value = theme.bottom;
       if (typeof theme.glass === 'number') DOM.glassOpacity.value = theme.glass;
-      if (theme.accent) DOM.accentColor.value = theme.accent;
     } catch (e) {
       console.warn('load theme:', e);
     }
@@ -688,8 +699,7 @@
       top: '#79bfe9',
       bottom: '#f0b79a',
       glass: 0.45,
-      glass2: 0.06,
-      accent: '#ffffff'
+      glass2: 0.06
     };
 
     applyTheme(defaultTheme, false);
@@ -697,7 +707,16 @@
     DOM.themeTop.value = defaultTheme.top;
     DOM.themeBottom.value = defaultTheme.bottom;
     DOM.glassOpacity.value = defaultTheme.glass;
-    DOM.accentColor.value = defaultTheme.accent;
+  }
+
+  function getPresetTheme(name) {
+    const presets = {
+      default: { top: '#79bfe9', bottom: '#f0b79a', glass: 0.45, glass2: 0.06 },
+      dark: { top: '#1b2533', mid1: '#243243', mid2: '#2f3f52', bottom: '#3a4659', glass: 0.22, glass2: 0.08 },
+      mist: { top: '#d7e6ef', mid1: '#dce8e8', mid2: '#e3e0d7', bottom: '#eadfce', glass: 0.5, glass2: 0.08 },
+      sand: { top: '#e7d9cb', mid1: '#e7ddcf', mid2: '#dfd8cf', bottom: '#d4d1cf', glass: 0.5, glass2: 0.08 }
+    };
+    return presets[name] || presets.default;
   }
 
   // ============================================================================
@@ -885,8 +904,7 @@
         top: DOM.themeTop.value,
         bottom: DOM.themeBottom.value,
         glass: Number(DOM.glassOpacity.value),
-        glass2: Math.max(0.01, Number(DOM.glassOpacity.value) - 0.35),
-        accent: DOM.accentColor.value
+        glass2: Math.max(0.01, Number(DOM.glassOpacity.value) - 0.35)
       }, false);
     });
 
@@ -895,12 +913,21 @@
         top: DOM.themeTop.value,
         bottom: DOM.themeBottom.value,
         glass: Number(DOM.glassOpacity.value),
-        glass2: Math.max(0.01, Number(DOM.glassOpacity.value) - 0.35),
-        accent: DOM.accentColor.value
+        glass2: Math.max(0.01, Number(DOM.glassOpacity.value) - 0.35)
       };
       applyTheme(theme, true);
       alert(MESSAGES.THEME_SAVED);
       closeModal();
+    });
+
+    DOM.presetButtons.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const preset = getPresetTheme(btn.dataset.preset);
+        applyTheme(preset, false);
+        DOM.themeTop.value = preset.top;
+        DOM.themeBottom.value = preset.bottom;
+        DOM.glassOpacity.value = preset.glass;
+      });
     });
 
     DOM.resetTheme.addEventListener('click', () => {

@@ -7,6 +7,8 @@
   --header-h: 72px;
   --footer-h: 56px;
   --bg-top: #79bfe9;
+  --bg-mid-1: #a7cee9;
+  --bg-mid-2: #d9bfb2;
   --bg-bottom: #f0b79a;
   --glass: rgba(255,255,255,0.45);
   --glass-2: rgba(255,255,255,0.06);
@@ -27,7 +29,7 @@ body{
   margin:0;
   min-height:100vh; /* ensure gradient covers full viewport height */
   /* gradient background - ensure no repeat and fill */
-  background: linear-gradient(180deg, var(--bg-top) 0%, #a7cee9 35%, #d9bfb2 70%, var(--bg-bottom) 100%);
+  background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-mid-1) 35%, var(--bg-mid-2) 70%, var(--bg-bottom) 100%);
   background-repeat: no-repeat;
   background-attachment: fixed; /* helps keep gradient stable when scrolling */
   background-size: 100% 100%;
@@ -344,6 +346,34 @@ input, button, textarea, select {
 }
 
 .backup-actions{ display:flex; gap:10px; flex-wrap:wrap; }
+.preset-actions{ display:flex; gap:8px; flex-wrap:wrap; }
+.preset-btn{ min-width:130px; font-size:14px; padding:10px 14px; }
+.shortcut-section{
+  background: linear-gradient(180deg, var(--soft-card), rgba(255,255,255,0.03));
+  border: 1px solid var(--soft-border);
+  border-radius: 14px;
+  padding: 12px;
+}
+.shortcut-section label{
+  display:block;
+  font-size:13px;
+  margin-bottom:6px;
+}
+.shortcut-list{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:8px;
+  font-size:13px;
+  color:rgba(255,255,255,0.92);
+}
+.shortcut-list span{ opacity:0.65; }
+kbd{
+  padding:2px 6px;
+  border-radius:6px;
+  border:1px solid rgba(255,255,255,0.25);
+  background: rgba(255,255,255,0.12);
+}
 
 .manual-controls{ display:flex; align-items:center; gap:12px; }
 .manual-controls input[type="number"]{
