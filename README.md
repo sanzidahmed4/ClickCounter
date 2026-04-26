@@ -1,6 +1,6 @@
 📊 ClickCounter - Advanced Click Counter Application
 
-A feature-rich, modern click counter web application built with vanilla JavaScript, CSS, and HTML. Includes themes, history tracking, undo/redo, export/import, and more!
+A feature-rich, modern click counter web application built with vanilla JavaScript, CSS, and HTML. Includes themes, history tracking, undo support, export/import, and more!
 
 **Live Link** https://sanzidahmed4.github.io/ClickCounter/
 ## 🎯 Features
@@ -32,7 +32,7 @@ A feature-rich, modern click counter web application built with vanilla JavaScri
 - **Lazy Loading**: Optimized rendering for performance
 - **Clear History**: Delete all historical data with one click
 
-### Undo/Redo
+### Undo
 - **Undo Functionality**: Press `z` to undo the last action
 - **Undo Stack**: Up to 50 previous states saved
 - **Persistent Undo**: Undo history persists during your session
