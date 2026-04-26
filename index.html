@@ -122,9 +122,15 @@
                 <label>Glass opacity</label>
                 <input type="range" id="glassOpacity" min="0.1" max="0.9" step="0.01" value="0.45" aria-label="Glass effect opacity" />
               </div>
-              <div class="theme-input">
-                <label>Accent white (text)</label>
-                <input type="color" id="accentColor" value="#ffffff" aria-label="Text accent color" />
+            </div>
+
+            <div class="theme-presets">
+              <label>Quick themes</label>
+              <div class="preset-actions">
+                <button class="pill pill-teal preset-btn" data-preset="default" type="button">Default Soft</button>
+                <button class="pill pill-teal preset-btn" data-preset="dark" type="button">Dark Mode</button>
+                <button class="pill pill-teal preset-btn" data-preset="mist" type="button">Mist Minimal</button>
+                <button class="pill pill-teal preset-btn" data-preset="sand" type="button">Sand Minimal</button>
               </div>
             </div>
 
@@ -132,6 +138,24 @@
               <button class="pill pill-teal" id="previewTheme" title="Preview theme">Preview</button>
               <button class="pill pill-teal" id="saveTheme" title="Save theme">Save Theme</button>
               <button class="pill pill-teal" id="resetTheme" title="Reset to default">Reset Theme</button>
+            </div>
+          </div>
+
+          <hr/>
+          <div class="shortcut-section">
+            <label>Keyboard shortcuts</label>
+            <div class="shortcut-list">
+              <kbd>+</kbd> / <kbd>−</kbd> : count up/down
+              <span>•</span>
+              <kbd>r</kbd> : reset
+              <span>•</span>
+              <kbd>z</kbd> : undo
+              <span>•</span>
+              <kbd>s</kbd> : stats
+              <span>•</span>
+              <kbd>e</kbd> : export
+              <span>•</span>
+              <kbd>i</kbd> : import
             </div>
           </div>
 
@@ -157,9 +181,6 @@
   <footer class="site-footer">
     <div class="footer-text">
       <span>Affilancers ClickCounter system ©2025 — Developed by SANZID</span>
-      <span class="footer-shortcuts" title="Keyboard shortcuts">
-        Shortcuts: <kbd>+</kbd> <kbd>−</kbd> <kbd>r</kbd> <kbd>z</kbd> <kbd>s</kbd> <kbd>e</kbd> <kbd>i</kbd>
-      </span>
     </div>
   </footer>
 
