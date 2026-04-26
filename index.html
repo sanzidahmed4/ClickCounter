@@ -25,12 +25,18 @@
     </div>
 
     <div class="header-right">
+      <button id="statsBtn" class="icon-btn" aria-label="Show statistics (press 's')" title="Show statistics">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"
+            d="M3 12h3v6H3zM8 8h3v10H8zM13 4h3v14h-3zM18 10h3v8h-3z"></path>
+        </svg>
+      </button>
       <button id="settingsBtn" class="icon-btn" aria-haspopup="dialog" aria-controls="settingsModal" title="Settings">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <path stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"
             d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z"></path>
           <path stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"
-            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06A2 2 0 1 1 2.3 16.88l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82L4.27 2.3A2 2 0 1 1 7.1.47l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V0a2 2 0 0 1 4 0v.09c.05.55.41 1.03 1 1.51h.01c.62.46 1.46.34 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.55.05 1.03.41 1.51 1H24a2 2 0 1 1 0 4h-.09c-.55.05-1.03.41-1.51 1z"/>
+            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33 1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82 1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
         </svg>
       </button>
     </div>
@@ -45,11 +51,11 @@
       </div>
 
       <div class="controls">
-        <button class="pill pill-red" data-action="dec" data-value="-1">− 1</button>
-        <button class="pill pill-red" data-action="inc" data-value="1">+ 1</button>
-        <button class="pill pill-red" data-action="inc" data-value="5">+ 5</button>
-        <button class="pill pill-red" data-action="inc" data-value="10">+ 10</button>
-        <button class="pill pill-red" id="resetBtn" data-action="reset" title="Reset counter">
+        <button class="pill pill-red" data-action="dec" data-value="-1" title="Decrease by 1 (-)">− 1</button>
+        <button class="pill pill-red" data-action="inc" data-value="1" title="Increase by 1 (+)">+ 1</button>
+        <button class="pill pill-red" data-action="inc" data-value="5" title="Increase by 5">+ 5</button>
+        <button class="pill pill-red" data-action="inc" data-value="10" title="Increase by 10">+ 10</button>
+        <button class="pill pill-red" id="resetBtn" data-action="reset" title="Reset counter (r)">
           ⟳ RESET
         </button>
       </div>
@@ -66,22 +72,33 @@
     <div class="modal-backdrop" id="settingsModal" role="dialog" aria-modal="true" aria-hidden="true">
       <div class="modal glass">
         <header class="modal-header">
-          <h3>Settings</h3>
+          <h3>Settings & Tools</h3>
           <button class="close-btn" id="modalClose" aria-label="Close settings">✕</button>
         </header>
 
         <section class="modal-body">
+          <!-- EXPORT/IMPORT SECTION -->
+          <div class="export-import-section">
+            <label>Backup & Restore</label>
+            <div class="backup-actions">
+              <button class="pill pill-teal" id="exportBtn" title="Export data as JSON (e)">📥 Export Data</button>
+              <button class="pill pill-teal" id="importBtn" title="Import data from JSON (i)">📤 Import Data</button>
+            </div>
+          </div>
+
+          <hr/>
+
           <div class="manual-number">
             <label>Manual adjust number</label>
             <div class="manual-controls">
-              <button class="pill pill-red" id="decManual">−</button>
-              <input type="number" id="manualNumber" value="1" min="0" aria-label="Manual number" />
-              <button class="pill pill-red" id="incManual">+</button>
+              <button class="pill pill-red" id="decManual" aria-label="Decrease manual value">−</button>
+              <input type="number" id="manualNumber" value="1" min="0" aria-label="Manual number value" />
+              <button class="pill pill-red" id="incManual" aria-label="Increase manual value">+</button>
             </div>
             <div class="manual-actions">
-              <button class="pill pill-red" id="applyAdd">Add</button>
-              <button class="pill pill-red" id="applySub">Subtract</button>
-              <button class="pill pill-red" id="setExact">Set exact</button>
+              <button class="pill pill-red" id="applyAdd" title="Add this number">Add</button>
+              <button class="pill pill-red" id="applySub" title="Subtract this number">Subtract</button>
+              <button class="pill pill-red" id="setExact" title="Set exact value">Set exact</button>
             </div>
           </div>
 
@@ -92,29 +109,29 @@
             <div class="theme-row">
               <div class="theme-input">
                 <label>Top color</label>
-                <input type="color" id="themeTop" value="#79bfe9" />
+                <input type="color" id="themeTop" value="#79bfe9" aria-label="Gradient top color" />
               </div>
               <div class="theme-input">
                 <label>Bottom color</label>
-                <input type="color" id="themeBottom" value="#f0b79a" />
+                <input type="color" id="themeBottom" value="#f0b79a" aria-label="Gradient bottom color" />
               </div>
             </div>
 
             <div class="theme-row">
               <div class="theme-input">
                 <label>Glass opacity</label>
-                <input type="range" id="glassOpacity" min="0.1" max="0.9" step="0.01" value="0.45" />
+                <input type="range" id="glassOpacity" min="0.1" max="0.9" step="0.01" value="0.45" aria-label="Glass effect opacity" />
               </div>
               <div class="theme-input">
                 <label>Accent white (text)</label>
-                <input type="color" id="accentColor" value="#ffffff" />
+                <input type="color" id="accentColor" value="#ffffff" aria-label="Text accent color" />
               </div>
             </div>
 
             <div class="theme-actions">
-              <button class="pill pill-teal" id="previewTheme">Preview</button>
-              <button class="pill pill-teal" id="saveTheme">Save Theme</button>
-              <button class="pill pill-teal" id="resetTheme">Reset Theme</button>
+              <button class="pill pill-teal" id="previewTheme" title="Preview theme">Preview</button>
+              <button class="pill pill-teal" id="saveTheme" title="Save theme">Save Theme</button>
+              <button class="pill pill-teal" id="resetTheme" title="Reset to default">Reset Theme</button>
             </div>
           </div>
 
@@ -138,7 +155,12 @@
 
   <!-- FOOTER — body এর একদম নিচে থাকবে (scene এর বাইরে) -->
   <footer class="site-footer">
-    <div class="footer-text">Affilancers ClickCounter system ©2025 — Devloped by SANZID</div>
+    <div class="footer-text">
+      <span>Affilancers ClickCounter system ©2025 — Developed by SANZID</span>
+      <span class="footer-shortcuts" title="Keyboard shortcuts">
+        Shortcuts: <kbd>+</kbd> <kbd>−</kbd> <kbd>r</kbd> <kbd>z</kbd> <kbd>s</kbd> <kbd>e</kbd> <kbd>i</kbd>
+      </span>
+    </div>
   </footer>
 
   <script src="app.js"></script>
