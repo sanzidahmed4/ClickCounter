@@ -2,6 +2,7 @@
 
 A feature-rich, modern click counter web application built with vanilla JavaScript, CSS, and HTML. Includes themes, history tracking, undo/redo, export/import, and more!
 
+**Live Link** https://sanzidahmed4.github.io/ClickCounter/
 ## 🎯 Features
 
 ### Core Functionality
