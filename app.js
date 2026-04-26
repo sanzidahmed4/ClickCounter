@@ -1,164 +1,389 @@
-// app.js — click counter with settings modal, custom theme save, + history
+/**
+ * ClickCounter Application
+ * A feature-rich counter app with themes, history, undo/redo, and achievements
+ * 
+ * Storage Keys:
+ * - clickCounter_v2: Current count and session data
+ * - clickCounter_startedAt: Session start timestamp
+ * - clickCounter_theme_v2: User-saved theme preferences
+ * - clickCounter_history_v2: Click history with timestamps
+ * - clickCounter_undo_v2: Undo stack for reverting actions
+ */
+
 (function () {
-  const STORAGE_KEY = 'clickCounter_v1';
-  const START_KEY = 'clickCounter_startedAt';
-  const THEME_KEY = 'clickCounter_theme_v1';
-  const HISTORY_KEY = 'clickCounter_history_v1';
+  // ============================================================================
+  // CONSTANTS - Magic values extracted for maintainability
+  // ============================================================================
+  const CONFIG = {
+    STORAGE_KEY: 'clickCounter_v2',
+    START_KEY: 'clickCounter_startedAt',
+    THEME_KEY: 'clickCounter_theme_v2',
+    HISTORY_KEY: 'clickCounter_history_v2',
+    UNDO_KEY: 'clickCounter_undo_v2',
+    
+    SAVE_INTERVAL: 4000, // ms - auto-save interval
+    DEBOUNCE_DELAY: 500, // ms - debounce save operations
+    HISTORY_MAX_ITEMS: 500,
+    HISTORY_DISPLAY_ITEMS: 50,
+    ANIMATION_DURATION: 220, // ms
+    
+    MILESTONE_THRESHOLDS: [10, 50, 100, 500, 1000, 5000, 10000],
+  };
 
-  // DOM
-  const countEl = document.getElementById('count');
-  const meter = document.getElementById('meter');
-  const controls = document.querySelector('.controls');
-  const startedAtEl = document.getElementById('startedAt');
-  const lastSavedEl = document.getElementById('lastSaved');
-  const resetBtn = document.getElementById('resetBtn');
+  const MESSAGES = {
+    RESET_CONFIRM: 'আপনি কি নিশ্চিত? কাউন্টার রিসেট হবে।',
+    CLEAR_HISTORY: 'আপনি কি ক্লিক হিস্ট্রি মুছে ফেলতে চান?',
+    RESET_THEME: 'Reset to default theme?',
+    THEME_SAVED: 'Theme saved and applied for this session.',
+    MILESTONE: (num) => `🎉 Milestone reached: ${num} clicks!`,
+  };
 
-  // header + modal elements (logo upload removed)
-  // const logoInput = document.getElementById('logoInput'); // removed
-  // const logoImg = document.getElementById('logoImg'); // removed
-  // const logoWrap = document.getElementById('logoWrap'); // not needed
+  const KEYBOARD_SHORTCUTS = {
+    '+': () => changeBy(1),
+    'Add': () => changeBy(1),
+    '-': () => changeBy(-1),
+    'Subtract': () => changeBy(-1),
+    'r': () => resetCounter(),
+    'R': () => resetCounter(),
+    'z': () => undoAction(),
+    'Z': () => undoAction(),
+  };
 
-  const settingsBtn = document.getElementById('settingsBtn');
-  const settingsModal = document.getElementById('settingsModal');
-  const modalClose = document.getElementById('modalClose');
+  // ============================================================================
+  // DOM ELEMENTS - Cache all DOM references
+  // ============================================================================
+  const DOM = {
+    // Main elements
+    countEl: document.getElementById('count'),
+    meter: document.getElementById('meter'),
+    controls: document.querySelector('.controls'),
+    resetBtn: document.getElementById('resetBtn'),
+    
+    // Meta display
+    startedAtEl: document.getElementById('startedAt'),
+    lastSavedEl: document.getElementById('lastSaved'),
+    
+    // Header & Modal
+    settingsBtn: document.getElementById('settingsBtn'),
+    settingsModal: document.getElementById('settingsModal'),
+    modalClose: document.getElementById('modalClose'),
+    
+    // Manual number controls
+    manualNumber: document.getElementById('manualNumber'),
+    decManual: document.getElementById('decManual'),
+    incManual: document.getElementById('incManual'),
+    applyAdd: document.getElementById('applyAdd'),
+    applySub: document.getElementById('applySub'),
+    setExact: document.getElementById('setExact'),
+    
+    // Theme controls
+    themeTop: document.getElementById('themeTop'),
+    themeBottom: document.getElementById('themeBottom'),
+    glassOpacity: document.getElementById('glassOpacity'),
+    accentColor: document.getElementById('accentColor'),
+    previewTheme: document.getElementById('previewTheme'),
+    saveTheme: document.getElementById('saveTheme'),
+    resetTheme: document.getElementById('resetTheme'),
+    
+    // History controls
+    historyListEl: document.getElementById('historyList'),
+    clearHistoryBtn: document.getElementById('clearHistory'),
+  };
 
-  // modal controls
-  const manualNumber = document.getElementById('manualNumber');
-  const decManual = document.getElementById('decManual');
-  const incManual = document.getElementById('incManual');
-  const applyAdd = document.getElementById('applyAdd');
-  const applySub = document.getElementById('applySub');
-  const setExact = document.getElementById('setExact');
+  // ============================================================================
+  // APPLICATION STATE
+  // ============================================================================
+  let state = {
+    count: 0,
+    startedAt: null,
+    lastSaved: null,
+    history: [], // { when, delta, type, newCount }
+    undoStack: [], // for undo/redo functionality
+    autoSaveScheduled: false,
+    isSaving: false,
+    milestonesSeen: new Set(),
+  };
 
-  const themeTop = document.getElementById('themeTop');
-  const themeBottom = document.getElementById('themeBottom');
-  const glassOpacity = document.getElementById('glassOpacity');
-  const accentColor = document.getElementById('accentColor');
-  const previewTheme = document.getElementById('previewTheme');
-  const saveTheme = document.getElementById('saveTheme');
-  const resetTheme = document.getElementById('resetTheme');
+  // ============================================================================
+  // UTILITY FUNCTIONS
+  // ============================================================================
 
-  // history DOM
-  const historyListEl = document.getElementById('historyList');
-  const clearHistoryBtn = document.getElementById('clearHistory');
+  /**
+   * Get current timestamp in ISO format
+   * @returns {string} ISO formatted timestamp
+   */
+  function nowISO() {
+    return new Date().toISOString();
+  }
 
-  // state
-  let count = 0;
-  let startedAt = null;
-  let lastSaved = null;
-  let history = []; // array of { when: ISO, delta: number, type: 'change'|'set'|'reset'|'add'|'sub', newCount: number }
+  /**
+   * Format ISO timestamp to localized string
+   * @param {string} iso - ISO formatted timestamp
+   * @returns {string} Formatted date/time or '—' if empty
+   */
+  function formatTimestamp(iso) {
+    if (!iso) return '—';
+    return new Date(iso).toLocaleString();
+  }
 
-  // helpers
-  function nowISO() { return new Date().toISOString(); }
-  function nice(iso) { if (!iso) return '—'; return new Date(iso).toLocaleString(); }
+  /**
+   * Debounce function to limit execution frequency
+   * @param {Function} func - Function to debounce
+   * @param {number} delay - Delay in milliseconds
+   * @returns {Function} Debounced function
+   */
+  function debounce(func, delay) {
+    let timeoutId = null;
+    return function debounced(...args) {
+      if (timeoutId) clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        func.apply(this, args);
+        timeoutId = null;
+      }, delay);
+    };
+  }
 
+  /**
+   * Animate element with pulse effect
+   * @param {HTMLElement} el - Element to animate
+   */
+  function animatePulse(el) {
+    if (!el) return;
+    el.animate(
+      [
+        { transform: 'scale(1)', opacity: 1 },
+        { transform: 'scale(0.98)', opacity: 0.98 },
+        { transform: 'scale(1)', opacity: 1 }
+      ],
+      { duration: CONFIG.ANIMATION_DURATION, easing: 'cubic-bezier(.2,.9,.3,1)' }
+    );
+  }
+
+  /**
+   * Show auto-save indicator
+   */
+  function showAutoSaveIndicator() {
+    const indicator = document.createElement('div');
+    indicator.style.cssText = `
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: rgba(43, 180, 169, 0.9);
+      color: white;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      z-index: 100;
+      animation: fadeInOut 2s ease;
+    `;
+    indicator.textContent = '✓ Saved';
+    document.body.appendChild(indicator);
+    setTimeout(() => indicator.remove(), 2000);
+  }
+
+  /**
+   * Show milestone achievement notification
+   * @param {number} milestone - Milestone number reached
+   */
+  function showMilestoneNotification(milestone) {
+    if (state.milestonesSeen.has(milestone)) return;
+    state.milestonesSeen.add(milestone);
+
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+      position: fixed;
+      top: 100px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(180deg, #ffd86b, #f1b940);
+      color: #0e2b00;
+      padding: 16px 24px;
+      border-radius: 12px;
+      font-weight: 600;
+      z-index: 100;
+      animation: slideDown 0.5s ease, slideUp 0.5s ease 2.5s forwards;
+    `;
+    notification.textContent = MESSAGES.MILESTONE(milestone);
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
+  }
+
+  /**
+   * Convert hex color to RGBA string
+   * @param {string} hex - Hex color code
+   * @param {number} alpha - Alpha value (0-1)
+   * @returns {string} RGBA string
+   */
+  function hexToRgba(hex, alpha) {
+    const h = hex.replace('#', '');
+    const r = parseInt(h.substring(0, 2), 16);
+    const g = parseInt(h.substring(2, 4), 16);
+    const b = parseInt(h.substring(4, 6), 16);
+    return `rgba(${r},${g},${b},${Number(alpha)})`;
+  }
+
+  /**
+   * Convert RGB/RGBA color to hex
+   * @param {string} color - Color string (rgb, rgba, or hex)
+   * @returns {string|null} Hex color or null if invalid
+   */
+  function rgbToHex(color) {
+    if (!color) return null;
+    color = color.replace(/\s/g, '');
+    if (color.startsWith('#')) return color;
+    const m = color.match(/rgba?\((\d+),(\d+),(\d+)/i);
+    if (!m) return null;
+    const r = parseInt(m[1]).toString(16).padStart(2, '0');
+    const g = parseInt(m[2]).toString(16).padStart(2, '0');
+    const b = parseInt(m[3]).toString(16).padStart(2, '0');
+    return `#${r}${g}${b}`;
+  }
+
+  // ============================================================================
+  // STORAGE OPERATIONS
+  // ============================================================================
+
+  /**
+   * Load application state from storage
+   */
   function loadState() {
     try {
-      const raw = sessionStorage.getItem(STORAGE_KEY);
+      const raw = localStorage.getItem(CONFIG.STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
-        count = Number(parsed.count) || 0;
-        lastSaved = parsed.lastSaved || null;
+        state.count = Number(parsed.count) || 0;
+        state.lastSaved = parsed.lastSaved || null;
+      }
+
+      const s = localStorage.getItem(CONFIG.START_KEY);
+      if (s) {
+        state.startedAt = s;
       } else {
-        count = 0;
-        lastSaved = null;
-      }
-      const s = sessionStorage.getItem(START_KEY);
-      if (s) startedAt = s;
-      else {
-        startedAt = nowISO();
-        sessionStorage.setItem(START_KEY, startedAt);
+        state.startedAt = nowISO();
+        localStorage.setItem(CONFIG.START_KEY, state.startedAt);
       }
     } catch (e) {
-      console.error('loadState error', e);
-      count = 0; lastSaved = null; startedAt = nowISO();
-      sessionStorage.setItem(START_KEY, startedAt);
+      console.error('loadState error:', e);
+      state.count = 0;
+      state.lastSaved = null;
+      state.startedAt = nowISO();
+      localStorage.setItem(CONFIG.START_KEY, state.startedAt);
     }
   }
 
-  function saveState() {
+  /**
+   * Debounced save function
+   */
+  const debouncedSave = debounce(() => {
     try {
-      const payload = { count, lastSaved: nowISO() };
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-      lastSaved = payload.lastSaved;
+      const payload = {
+        count: state.count,
+        lastSaved: nowISO()
+      };
+      localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(payload));
+      state.lastSaved = payload.lastSaved;
       renderMeta();
+      showAutoSaveIndicator();
+      state.isSaving = false;
     } catch (e) {
-      console.error('saveState error', e);
+      console.error('saveState error:', e);
+      state.isSaving = false;
     }
+  }, CONFIG.DEBOUNCE_DELAY);
+
+  /**
+   * Save application state (debounced)
+   */
+  function saveState() {
+    state.isSaving = true;
+    debouncedSave();
   }
 
-  function render() {
-    countEl.textContent = String(count);
-    renderMeta();
-  }
+  // ============================================================================
+  // HISTORY OPERATIONS
+  // ============================================================================
 
-  function renderMeta() {
-    startedAtEl.textContent = nice(startedAt);
-    lastSavedEl.textContent = nice(lastSaved);
-  }
-
-  function pulse(el) {
-    if (!el) return;
-    el.animate([
-      { transform: 'scale(1)', opacity: 1 },
-      { transform: 'scale(0.98)', opacity: 0.98 },
-      { transform: 'scale(1)', opacity: 1 }
-    ], { duration: 220, easing: 'cubic-bezier(.2,.9,.3,1)' });
-  }
-
-  // HISTORY: load/save and render
+  /**
+   * Load history from storage
+   */
   function loadHistory() {
     try {
-      const raw = sessionStorage.getItem(HISTORY_KEY);
-      if (!raw) { history = []; return; }
-      history = JSON.parse(raw) || [];
+      const raw = localStorage.getItem(CONFIG.HISTORY_KEY);
+      if (!raw) {
+        state.history = [];
+        return;
+      }
+      state.history = JSON.parse(raw) || [];
     } catch (e) {
-      console.warn('loadHistory error', e);
-      history = [];
+      console.warn('loadHistory error:', e);
+      state.history = [];
     }
   }
 
+  /**
+   * Save history to storage
+   */
   function saveHistory() {
     try {
-      sessionStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+      localStorage.setItem(CONFIG.HISTORY_KEY, JSON.stringify(state.history));
     } catch (e) {
-      console.warn('saveHistory error', e);
+      console.warn('saveHistory error:', e);
     }
   }
 
+  /**
+   * Record a history entry
+   * @param {number} delta - Change in count
+   * @param {string} type - Action type: 'change', 'set', 'reset', 'add', 'sub'
+   */
   function recordHistory(delta, type = 'change') {
     const entry = {
       when: nowISO(),
       delta: Number(delta),
       type: String(type),
-      newCount: Number(count)
+      newCount: Number(state.count)
     };
-    history.unshift(entry); // newest first
-    if (history.length > 500) history.length = 500;
+
+    state.history.unshift(entry); // newest first
+    if (state.history.length > CONFIG.HISTORY_MAX_ITEMS) {
+      state.history.length = CONFIG.HISTORY_MAX_ITEMS;
+    }
+
     saveHistory();
-    if (settingsModal.getAttribute('aria-hidden') === 'false') {
+
+    // Only update UI if modal is open
+    if (DOM.settingsModal?.getAttribute('aria-hidden') === 'false') {
       renderHistory();
     }
   }
 
+  /**
+   * Render history list with lazy loading
+   */
   function renderHistory() {
-    if (!historyListEl) return;
-    historyListEl.innerHTML = '';
-    if (!history || history.length === 0) {
+    if (!DOM.historyListEl) return;
+
+    DOM.historyListEl.innerHTML = '';
+
+    if (!state.history || state.history.length === 0) {
       const empty = document.createElement('div');
       empty.className = 'history-item';
       empty.textContent = 'No history yet.';
-      historyListEl.appendChild(empty);
+      DOM.historyListEl.appendChild(empty);
       return;
     }
-    const toRender = history.slice(0, 200);
+
+    // Lazy load: only display recent items
+    const toRender = state.history.slice(0, CONFIG.HISTORY_DISPLAY_ITEMS);
     for (const h of toRender) {
       const item = document.createElement('div');
       item.className = 'history-item';
+
       const left = document.createElement('div');
       left.style.display = 'flex';
       left.style.flexDirection = 'column';
       left.style.gap = '4px';
+
       const label = document.createElement('div');
       let actionText = '';
       if (h.type === 'set') actionText = `Set → ${h.newCount}`;
@@ -169,9 +394,11 @@
       }
       label.textContent = actionText;
       label.style.fontWeight = '600';
+
       const meta = document.createElement('div');
       meta.className = 'meta';
-      meta.textContent = new Date(h.when).toLocaleString();
+      meta.textContent = formatTimestamp(h.when);
+
       left.appendChild(label);
       left.appendChild(meta);
 
@@ -182,227 +409,559 @@
 
       item.appendChild(left);
       item.appendChild(right);
-      historyListEl.appendChild(item);
+      DOM.historyListEl.appendChild(item);
+    }
+
+    // Show count if more items exist
+    if (state.history.length > CONFIG.HISTORY_DISPLAY_ITEMS) {
+      const more = document.createElement('div');
+      more.className = 'history-item';
+      more.style.textAlign = 'center';
+      more.style.opacity = '0.7';
+      more.textContent = `... and ${state.history.length - CONFIG.HISTORY_DISPLAY_ITEMS} more`;
+      DOM.historyListEl.appendChild(more);
     }
   }
 
+  /**
+   * Clear all history with confirmation
+   * @param {boolean} confirmDialog - Show confirmation dialog
+   */
   function clearHistory(confirmDialog = true) {
     if (confirmDialog) {
-      const ok = confirm('আপনি কি ক্লিক হিস্ট্রি মুছে ফেলতে চান?');
+      const ok = confirm(MESSAGES.CLEAR_HISTORY);
       if (!ok) return;
     }
-    history = [];
+    state.history = [];
     saveHistory();
     renderHistory();
   }
 
-  // THEME: apply / preview / save to sessionStorage (persist for session)
+  // ============================================================================
+  // UNDO/REDO OPERATIONS
+  // ============================================================================
+
+  /**
+   * Load undo stack from storage
+   */
+  function loadUndoStack() {
+    try {
+      const raw = localStorage.getItem(CONFIG.UNDO_KEY);
+      if (!raw) {
+        state.undoStack = [];
+        return;
+      }
+      state.undoStack = JSON.parse(raw) || [];
+    } catch (e) {
+      console.warn('loadUndoStack error:', e);
+      state.undoStack = [];
+    }
+  }
+
+  /**
+   * Save undo stack to storage
+   */
+  function saveUndoStack() {
+    try {
+      localStorage.setItem(CONFIG.UNDO_KEY, JSON.stringify(state.undoStack));
+    } catch (e) {
+      console.warn('saveUndoStack error:', e);
+    }
+  }
+
+  /**
+   * Record undo point
+   */
+  function recordUndo() {
+    state.undoStack.push({
+      count: state.count,
+      when: nowISO()
+    });
+
+    // Limit undo stack size
+    if (state.undoStack.length > 50) {
+      state.undoStack.shift();
+    }
+
+    saveUndoStack();
+  }
+
+  /**
+   * Undo last action
+   */
+  function undoAction() {
+    if (state.undoStack.length === 0) {
+      console.warn('Nothing to undo');
+      return;
+    }
+
+    const previousState = state.undoStack.pop();
+    state.count = previousState.count;
+    recordHistory(0, 'undo');
+    saveState();
+    render();
+    animatePulse(DOM.meter);
+    saveUndoStack();
+  }
+
+  // ============================================================================
+  // EXPORT/IMPORT OPERATIONS
+  // ============================================================================
+
+  /**
+   * Export all data as JSON
+   */
+  function exportData() {
+    const data = {
+      count: state.count,
+      startedAt: state.startedAt,
+      lastSaved: state.lastSaved,
+      history: state.history,
+      exportedAt: nowISO()
+    };
+
+    const json = JSON.stringify(data, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `clickCounter_backup_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  /**
+   * Import data from JSON file
+   */
+  function importData() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'application/json';
+
+    input.onchange = function (e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function (event) {
+        try {
+          const data = JSON.parse(event.target.result);
+
+          if (typeof data.count === 'number') {
+            state.count = data.count;
+          }
+          if (Array.isArray(data.history)) {
+            state.history = data.history;
+          }
+          if (data.startedAt) {
+            state.startedAt = data.startedAt;
+          }
+
+          saveState();
+          saveHistory();
+          render();
+          alert('Data imported successfully!');
+          closeModal();
+        } catch (error) {
+          alert('Error importing file: ' + error.message);
+        }
+      };
+
+      reader.readAsText(file);
+    };
+
+    input.click();
+  }
+
+  // ============================================================================
+  // STATISTICS
+  // ============================================================================
+
+  /**
+   * Calculate session statistics
+   * @returns {Object} Statistics object
+   */
+  function getStatistics() {
+    const now = new Date();
+    const started = new Date(state.startedAt);
+    const elapsedMinutes = (now - started) / (1000 * 60);
+    const avgClicksPerMinute = elapsedMinutes > 0 ? (state.count / elapsedMinutes).toFixed(2) : 0;
+
+    return {
+      totalClicks: state.count,
+      elapsedMinutes: Math.floor(elapsedMinutes),
+      avgClicksPerMinute,
+      historyCount: state.history.length,
+      sessionStarted: formatTimestamp(state.startedAt)
+    };
+  }
+
+  /**
+   * Show statistics in a readable format
+   */
+  function showStatistics() {
+    const stats = getStatistics();
+    alert(
+      `📊 Session Statistics\n\n` +
+      `Total Clicks: ${stats.totalClicks}\n` +
+      `Time Elapsed: ${stats.elapsedMinutes} min\n` +
+      `Avg Clicks/min: ${stats.avgClicksPerMinute}\n` +
+      `History Entries: ${stats.historyCount}\n` +
+      `Session Started: ${stats.sessionStarted}`
+    );
+  }
+
+  // ============================================================================
+  // THEME OPERATIONS
+  // ============================================================================
+
+  /**
+   * Apply theme to document
+   * @param {Object} theme - Theme configuration
+   * @param {boolean} persist - Whether to save to storage
+   */
   function applyTheme(theme, persist = false) {
     if (!theme) return;
+
     const root = document.documentElement;
     if (theme.top) root.style.setProperty('--bg-top', theme.top);
     if (theme.bottom) root.style.setProperty('--bg-bottom', theme.bottom);
     if (theme.glass) root.style.setProperty('--glass', hexToRgba('#ffffff', theme.glass));
     if (theme.glass2) root.style.setProperty('--glass-2', hexToRgba('#ffffff', theme.glass2));
     if (theme.accent) root.style.setProperty('--accent-white', theme.accent);
+
     if (persist) {
       try {
-        sessionStorage.setItem(THEME_KEY, JSON.stringify(theme));
-      } catch (e) { console.warn('theme save failed', e); }
+        localStorage.setItem(CONFIG.THEME_KEY, JSON.stringify(theme));
+      } catch (e) {
+        console.warn('theme save failed:', e);
+      }
     }
   }
 
+  /**
+   * Load theme from storage
+   */
   function loadTheme() {
     try {
-      const raw = sessionStorage.getItem(THEME_KEY);
+      const raw = localStorage.getItem(CONFIG.THEME_KEY);
       if (!raw) return;
+
       const theme = JSON.parse(raw);
       applyTheme(theme, false);
-      if (theme.top) themeTop.value = theme.top;
-      if (theme.bottom) themeBottom.value = theme.bottom;
-      if (typeof theme.glass === 'number') glassOpacity.value = theme.glass;
-      if (theme.accent) accentColor.value = theme.accent;
-    } catch (e) { console.warn('load theme', e); }
+
+      if (theme.top) DOM.themeTop.value = theme.top;
+      if (theme.bottom) DOM.themeBottom.value = theme.bottom;
+      if (typeof theme.glass === 'number') DOM.glassOpacity.value = theme.glass;
+      if (theme.accent) DOM.accentColor.value = theme.accent;
+    } catch (e) {
+      console.warn('load theme:', e);
+    }
   }
 
+  /**
+   * Reset theme to default
+   */
   function resetThemeToDefault() {
-    sessionStorage.removeItem(THEME_KEY);
-    applyTheme({
+    localStorage.removeItem(CONFIG.THEME_KEY);
+    const defaultTheme = {
       top: '#79bfe9',
       bottom: '#f0b79a',
       glass: 0.45,
       glass2: 0.06,
       accent: '#ffffff'
-    }, false);
-    themeTop.value = '#79bfe9';
-    themeBottom.value = '#f0b79a';
-    glassOpacity.value = 0.45;
-    accentColor.value = '#ffffff';
+    };
+
+    applyTheme(defaultTheme, false);
+
+    DOM.themeTop.value = defaultTheme.top;
+    DOM.themeBottom.value = defaultTheme.bottom;
+    DOM.glassOpacity.value = defaultTheme.glass;
+    DOM.accentColor.value = defaultTheme.accent;
   }
 
-  function hexToRgba(hex, alpha) {
-    const h = hex.replace('#','');
-    const r = parseInt(h.substring(0,2),16);
-    const g = parseInt(h.substring(2,4),16);
-    const b = parseInt(h.substring(4,6),16);
-    return `rgba(${r},${g},${b},${Number(alpha)})`;
+  // ============================================================================
+  // UI RENDERING
+  // ============================================================================
+
+  /**
+   * Render counter display
+   */
+  function render() {
+    DOM.countEl.textContent = String(state.count);
+    renderMeta();
   }
 
-  // modal open/close
+  /**
+   * Render metadata (timestamps)
+   */
+  function renderMeta() {
+    DOM.startedAtEl.textContent = formatTimestamp(state.startedAt);
+    DOM.lastSavedEl.textContent = formatTimestamp(state.lastSaved);
+  }
+
+  /**
+   * Open settings modal
+   */
   function openModal() {
-    settingsModal.setAttribute('aria-hidden','false');
-    settingsModal.style.pointerEvents = 'auto';
-    manualNumber.value = 1;
+    DOM.settingsModal.setAttribute('aria-hidden', 'false');
+    DOM.settingsModal.style.pointerEvents = 'auto';
+    DOM.manualNumber.value = 1;
+
     try {
-      const ct = getComputedStyle(document.documentElement).getPropertyValue('--bg-top').trim();
-      const cb = getComputedStyle(document.documentElement).getPropertyValue('--bg-bottom').trim();
-      if (ct) themeTop.value = rgbToHex(ct) || themeTop.value;
-      if (cb) themeBottom.value = rgbToHex(cb) || themeBottom.value;
-    } catch (e) {}
+      const ct = getComputedStyle(document.documentElement)
+        .getPropertyValue('--bg-top')
+        .trim();
+      const cb = getComputedStyle(document.documentElement)
+        .getPropertyValue('--bg-bottom')
+        .trim();
+      if (ct) DOM.themeTop.value = rgbToHex(ct) || DOM.themeTop.value;
+      if (cb) DOM.themeBottom.value = rgbToHex(cb) || DOM.themeBottom.value;
+    } catch (e) {
+      console.warn('Error syncing theme colors:', e);
+    }
+
     renderHistory();
   }
+
+  /**
+   * Close settings modal
+   */
   function closeModal() {
-    settingsModal.setAttribute('aria-hidden','true');
-    settingsModal.style.pointerEvents = 'none';
+    DOM.settingsModal.setAttribute('aria-hidden', 'true');
+    DOM.settingsModal.style.pointerEvents = 'none';
   }
 
-  function rgbToHex(color) {
-    if (!color) return null;
-    color = color.replace(/\s/g,'');
-    if (color.startsWith('#')) return color;
-    const m = color.match(/rgba?\((\d+),(\d+),(\d+)/i);
-    if (!m) return null;
-    const r = parseInt(m[1]).toString(16).padStart(2,'0');
-    const g = parseInt(m[2]).toString(16).padStart(2,'0');
-    const b = parseInt(m[3]).toString(16).padStart(2,'0');
-    return `#${r}${g}${b}`;
+  // ============================================================================
+  // COUNTER ACTIONS
+  // ============================================================================
+
+  /**
+   * Change counter by delta value
+   * @param {number} delta - Amount to change
+   */
+  function changeBy(delta) {
+    recordUndo();
+    const newVal = Number(state.count) + Number(delta);
+    state.count = newVal < 0 ? 0 : newVal; // prevent negative
+
+    // Check for milestones
+    CONFIG.MILESTONE_THRESHOLDS.forEach(milestone => {
+      if (state.count >= milestone && state.count - delta < milestone) {
+        showMilestoneNotification(milestone);
+      }
+    });
+
+    saveState();
+    render();
+    animatePulse(DOM.meter);
+    recordHistory(delta, 'change');
   }
 
-  // init listeners
+  /**
+   * Reset counter to zero
+   */
+  function resetCounter() {
+    const ok = confirm(MESSAGES.RESET_CONFIRM);
+    if (!ok) return;
+
+    recordUndo();
+    state.count = 0;
+    recordHistory(0, 'reset');
+    localStorage.removeItem(CONFIG.STORAGE_KEY);
+    state.lastSaved = null;
+    saveState();
+    render();
+    animatePulse(DOM.resetBtn);
+  }
+
+  // ============================================================================
+  // EVENT LISTENERS INITIALIZATION
+  // ============================================================================
+
+  /**
+   * Initialize all event listeners
+   */
   function initListeners() {
-    meter.addEventListener('click', () => changeBy(1));
-    meter.addEventListener('keydown', (e) => {
+    // ---- MAIN COUNTER ----
+    DOM.meter.addEventListener('click', () => changeBy(1));
+    DOM.meter.addEventListener('keydown', (e) => {
       if (e.code === 'Space' || e.code === 'Enter') {
         e.preventDefault();
         changeBy(1);
       }
     });
 
-    controls.addEventListener('click', (e) => {
+    // ---- CONTROL BUTTONS ----
+    DOM.controls.addEventListener('click', (e) => {
       const btn = e.target.closest('button[data-action]');
       if (!btn) return;
+
       const action = btn.dataset.action;
       const value = Number(btn.dataset.value || 0);
+
       if (action === 'inc') changeBy(Math.abs(value));
       else if (action === 'dec') changeBy(-Math.abs(value));
     });
 
-    resetBtn.addEventListener('click', () => {
-      const ok = confirm('আপনি কি নিশ্চিত? কাউন্টার রিসেট হবে।');
-      if (!ok) return;
-      count = 0;
-      recordHistory(0, 'reset');
-      sessionStorage.removeItem(STORAGE_KEY);
-      lastSaved = null;
-      saveState();
-      render();
-      pulse(resetBtn);
-    });
+    // ---- RESET BUTTON ----
+    DOM.resetBtn.addEventListener('click', resetCounter);
 
-    setInterval(() => saveState(), 4000);
+    // ---- AUTO-SAVE ----
+    setInterval(() => saveState(), CONFIG.SAVE_INTERVAL);
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'hidden') saveState();
     });
     window.addEventListener('beforeunload', () => saveState());
 
-    settingsBtn.addEventListener('click', openModal);
-    modalClose.addEventListener('click', closeModal);
-    settingsModal.addEventListener('click', (e) => {
-      if (e.target === settingsModal) closeModal();
+    // ---- MODAL MANAGEMENT ----
+    DOM.settingsBtn.addEventListener('click', openModal);
+    DOM.modalClose.addEventListener('click', closeModal);
+    DOM.settingsModal.addEventListener('click', (e) => {
+      if (e.target === DOM.settingsModal) closeModal();
     });
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') closeModal();
     });
 
-    decManual.addEventListener('click', () => {
-      manualNumber.value = Math.max(0, Number(manualNumber.value) - 1);
+    // ---- MANUAL NUMBER CONTROLS ----
+    DOM.decManual.addEventListener('click', () => {
+      DOM.manualNumber.value = Math.max(0, Number(DOM.manualNumber.value) - 1);
     });
-    incManual.addEventListener('click', () => {
-      manualNumber.value = Number(manualNumber.value) + 1;
+    DOM.incManual.addEventListener('click', () => {
+      DOM.manualNumber.value = Number(DOM.manualNumber.value) + 1;
     });
-    applyAdd.addEventListener('click', () => {
-      const v = Number(manualNumber.value) || 0;
+    DOM.applyAdd.addEventListener('click', () => {
+      const v = Number(DOM.manualNumber.value) || 0;
+      recordUndo();
       changeBy(v);
-      recordHistory(v, 'add');
     });
-    applySub.addEventListener('click', () => {
-      const v = Number(manualNumber.value) || 0;
+    DOM.applySub.addEventListener('click', () => {
+      const v = Number(DOM.manualNumber.value) || 0;
+      recordUndo();
       changeBy(-v);
-      recordHistory(-v, 'sub');
     });
-    setExact.addEventListener('click', () => {
-      const v = Math.max(0, Number(manualNumber.value) || 0);
-      count = v;
+    DOM.setExact.addEventListener('click', () => {
+      const v = Math.max(0, Number(DOM.manualNumber.value) || 0);
+      recordUndo();
+      state.count = v;
       saveState();
       render();
-      pulse(meter);
+      animatePulse(DOM.meter);
       recordHistory(v, 'set');
     });
 
-    previewTheme.addEventListener('click', () => {
+    // ---- THEME CONTROLS ----
+    DOM.previewTheme.addEventListener('click', () => {
       applyTheme({
-        top: themeTop.value,
-        bottom: themeBottom.value,
-        glass: Number(glassOpacity.value),
-        glass2: Math.max(0.01, Number(glassOpacity.value) - 0.35),
-        accent: accentColor.value
+        top: DOM.themeTop.value,
+        bottom: DOM.themeBottom.value,
+        glass: Number(DOM.glassOpacity.value),
+        glass2: Math.max(0.01, Number(DOM.glassOpacity.value) - 0.35),
+        accent: DOM.accentColor.value
       }, false);
     });
 
-    saveTheme.addEventListener('click', () => {
+    DOM.saveTheme.addEventListener('click', () => {
       const theme = {
-        top: themeTop.value,
-        bottom: themeBottom.value,
-        glass: Number(glassOpacity.value),
-        glass2: Math.max(0.01, Number(glassOpacity.value) - 0.35),
-        accent: accentColor.value
+        top: DOM.themeTop.value,
+        bottom: DOM.themeBottom.value,
+        glass: Number(DOM.glassOpacity.value),
+        glass2: Math.max(0.01, Number(DOM.glassOpacity.value) - 0.35),
+        accent: DOM.accentColor.value
       };
       applyTheme(theme, true);
-      alert('Theme saved and applied for this session.');
+      alert(MESSAGES.THEME_SAVED);
       closeModal();
     });
 
-    resetTheme.addEventListener('click', () => {
-      const ok = confirm('Reset to default theme?');
+    DOM.resetTheme.addEventListener('click', () => {
+      const ok = confirm(MESSAGES.RESET_THEME);
       if (!ok) return;
       resetThemeToDefault();
       alert('Theme reset to default.');
     });
 
-    if (clearHistoryBtn) {
-      clearHistoryBtn.addEventListener('click', () => clearHistory(true));
+    // ---- HISTORY CONTROLS ----
+    if (DOM.clearHistoryBtn) {
+      DOM.clearHistoryBtn.addEventListener('click', () => clearHistory(true));
     }
+
+    // ---- KEYBOARD SHORTCUTS ----
+    document.addEventListener('keydown', (e) => {
+      // Don't trigger shortcuts when typing in inputs
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+        return;
+      }
+
+      const key = e.key;
+      if (KEYBOARD_SHORTCUTS[key]) {
+        e.preventDefault();
+        KEYBOARD_SHORTCUTS[key]();
+      }
+    });
+
+    // ---- GLOBAL SHORTCUTS (press 's' to show stats, 'e' to export, 'i' to import) ----
+    document.addEventListener('keydown', (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+        return;
+      }
+
+      if (e.key === 's' || e.key === 'S') {
+        e.preventDefault();
+        showStatistics();
+      }
+      if (e.key === 'e' || e.key === 'E') {
+        e.preventDefault();
+        exportData();
+      }
+      if (e.key === 'i' || e.key === 'I') {
+        e.preventDefault();
+        importData();
+      }
+    });
   }
 
-  // actions
-  function changeBy(delta) {
-    const newVal = Number(count) + Number(delta);
-    count = newVal < 0 ? 0 : newVal; // prevent negative
-    saveState();
-    render();
-    pulse(meter);
-    recordHistory(delta, 'change');
-  }
+  // ============================================================================
+  // INITIALIZATION
+  // ============================================================================
 
-  // boot
+  /**
+   * Initialize application
+   */
   function init() {
     loadState();
     loadHistory();
+    loadUndoStack();
     render();
     initListeners();
-    // loadLogo();  // removed — logo upload has been disabled per request
     loadTheme();
+
+    // Add CSS animation keyframes dynamically
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes fadeInOut {
+        0% { opacity: 0; }
+        10% { opacity: 1; }
+        90% { opacity: 1; }
+        100% { opacity: 0; }
+      }
+      @keyframes slideDown {
+        from { transform: translateX(-50%) translateY(-100%); opacity: 0; }
+        to { transform: translateX(-50%) translateY(0); opacity: 1; }
+      }
+      @keyframes slideUp {
+        from { transform: translateX(-50%) translateY(0); opacity: 1; }
+        to { transform: translateX(-50%) translateY(-100%); opacity: 0; }
+      }
+    `;
+    document.head.appendChild(style);
+
+    console.log('ClickCounter initialized. Keyboard shortcuts: +/-/r/z/s/e/i');
   }
 
+  // Boot application
   init();
 })();
