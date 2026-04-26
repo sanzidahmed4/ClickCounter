@@ -345,8 +345,28 @@ input, button, textarea, select {
 }
 
 .backup-actions{ display:flex; gap:10px; flex-wrap:wrap; }
-.preset-actions{ display:flex; gap:8px; flex-wrap:wrap; }
-.preset-btn{ min-width:130px; font-size:14px; padding:10px 14px; }
+.preset-swatches{ display:flex; gap:10px; flex-wrap:wrap; }
+.preset-swatch{
+  width:34px;
+  height:34px;
+  border-radius:8px;
+  border:1px solid rgba(255,255,255,0.45);
+  box-shadow: 0 6px 14px rgba(0,0,0,0.18);
+  cursor:pointer;
+}
+.preset-swatch:nth-child(1){ background: linear-gradient(180deg,#79bfe9,#f0b79a); }
+.preset-swatch:nth-child(2){ background: linear-gradient(180deg,#1b2533,#3a4659); }
+.preset-swatch:nth-child(3){ background: linear-gradient(180deg,#d7e6ef,#eadfce); }
+.preset-swatch:nth-child(4){ background: linear-gradient(180deg,#e7d9cb,#d4d1cf); }
+.preset-swatch:focus{
+  outline:2px solid rgba(255,255,255,0.7);
+  outline-offset:2px;
+}
+.compact-btn{
+  min-width:78px;
+  padding:9px 14px;
+  font-size:14px;
+}
 .shortcut-section{
   background: linear-gradient(180deg, var(--soft-card), rgba(255,255,255,0.03));
   border: 1px solid var(--soft-border);

@@ -89,7 +89,7 @@
     previewTheme: document.getElementById('previewTheme'),
     saveTheme: document.getElementById('saveTheme'),
     resetTheme: document.getElementById('resetTheme'),
-    presetButtons: document.querySelectorAll('.preset-btn'),
+    presetButtons: document.querySelectorAll('.preset-swatch'),
     
     // History controls
     historyListEl: document.getElementById('historyList'),
