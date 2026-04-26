@@ -65,8 +65,13 @@
     
     // Header & Modal
     settingsBtn: document.getElementById('settingsBtn'),
+    statsBtn: document.getElementById('statsBtn'),
     settingsModal: document.getElementById('settingsModal'),
     modalClose: document.getElementById('modalClose'),
+
+    // Data transfer controls
+    exportBtn: document.getElementById('exportBtn'),
+    importBtn: document.getElementById('importBtn'),
     
     // Manual number controls
     manualNumber: document.getElementById('manualNumber'),
@@ -548,14 +553,27 @@
       reader.onload = function (event) {
         try {
           const data = JSON.parse(event.target.result);
+          if (!data || typeof data !== 'object') {
+            throw new Error('Invalid backup format');
+          }
 
-          if (typeof data.count === 'number') {
-            state.count = data.count;
+          if (Number.isFinite(data.count)) {
+            state.count = Math.max(0, Number(data.count));
           }
+
           if (Array.isArray(data.history)) {
-            state.history = data.history;
+            state.history = data.history
+              .filter((item) => item && typeof item === 'object')
+              .map((item) => ({
+                when: item.when || nowISO(),
+                delta: Number(item.delta) || 0,
+                type: String(item.type || 'change'),
+                newCount: Math.max(0, Number(item.newCount) || 0)
+              }))
+              .slice(0, CONFIG.HISTORY_MAX_ITEMS);
           }
-          if (data.startedAt) {
+
+          if (typeof data.startedAt === 'string' && data.startedAt) {
             state.startedAt = data.startedAt;
           }
 
@@ -818,7 +836,17 @@
 
     // ---- MODAL MANAGEMENT ----
     DOM.settingsBtn.addEventListener('click', openModal);
+    if (DOM.statsBtn) {
+      DOM.statsBtn.addEventListener('click', showStatistics);
+    }
     DOM.modalClose.addEventListener('click', closeModal);
+
+    if (DOM.exportBtn) {
+      DOM.exportBtn.addEventListener('click', exportData);
+    }
+    if (DOM.importBtn) {
+      DOM.importBtn.addEventListener('click', importData);
+    }
     DOM.settingsModal.addEventListener('click', (e) => {
       if (e.target === DOM.settingsModal) closeModal();
     });
@@ -835,12 +863,10 @@
     });
     DOM.applyAdd.addEventListener('click', () => {
       const v = Number(DOM.manualNumber.value) || 0;
-      recordUndo();
       changeBy(v);
     });
     DOM.applySub.addEventListener('click', () => {
       const v = Number(DOM.manualNumber.value) || 0;
-      recordUndo();
       changeBy(-v);
     });
     DOM.setExact.addEventListener('click', () => {
