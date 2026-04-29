@@ -415,6 +415,7 @@ kbd{
 .manual-actions{ display:flex; gap:10px; margin-top:8px; flex-wrap:wrap; }
 .theme-row{ display:flex; gap:12px; align-items:center; margin-top:6px; flex-wrap:wrap; }
 .theme-input{ display:flex; flex-direction:column; gap:6px; }
+.theme-presets{ min-width:170px; }
 .theme-input input[type="color"]{ width:56px; height:36px; border-radius:8px; border:0; padding:2px; }
 .theme-actions{ display:flex; gap:8px; margin-top:12px; }
 

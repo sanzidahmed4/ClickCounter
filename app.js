@@ -685,10 +685,14 @@
 
       if (theme.top) DOM.themeTop.value = theme.top;
       if (theme.bottom) DOM.themeBottom.value = theme.bottom;
-      if (typeof theme.glass === 'number') DOM.glassOpacity.value = theme.glass;
     } catch (e) {
       console.warn('load theme:', e);
     }
+  }
+
+  function getGlassOpacityValue() {
+    if (!DOM.glassOpacity) return 0.45;
+    return Number(DOM.glassOpacity.value) || 0.45;
   }
 
   /**
@@ -707,7 +711,7 @@
 
     DOM.themeTop.value = defaultTheme.top;
     DOM.themeBottom.value = defaultTheme.bottom;
-    DOM.glassOpacity.value = defaultTheme.glass;
+    if (DOM.glassOpacity) DOM.glassOpacity.value = defaultTheme.glass;
   }
 
   function getPresetTheme(name) {
@@ -909,8 +913,8 @@
       applyTheme({
         top: DOM.themeTop.value,
         bottom: DOM.themeBottom.value,
-        glass: Number(DOM.glassOpacity.value),
-        glass2: Math.max(0.01, Number(DOM.glassOpacity.value) - 0.35)
+        glass: getGlassOpacityValue(),
+        glass2: Math.max(0.01, getGlassOpacityValue() - 0.35)
       }, false);
     });
 
@@ -918,8 +922,8 @@
       const theme = {
         top: DOM.themeTop.value,
         bottom: DOM.themeBottom.value,
-        glass: Number(DOM.glassOpacity.value),
-        glass2: Math.max(0.01, Number(DOM.glassOpacity.value) - 0.35)
+        glass: getGlassOpacityValue(),
+        glass2: Math.max(0.01, getGlassOpacityValue() - 0.35)
       };
       applyTheme(theme, true);
       alert(MESSAGES.THEME_SAVED);
@@ -932,7 +936,7 @@
         applyTheme(preset, false);
         DOM.themeTop.value = preset.top;
         DOM.themeBottom.value = preset.bottom;
-        DOM.glassOpacity.value = preset.glass;
+        if (DOM.glassOpacity) DOM.glassOpacity.value = preset.glass;
       });
     });
 
