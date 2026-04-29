@@ -73,6 +73,7 @@
     // Data transfer controls
     exportBtn: document.getElementById('exportBtn'),
     importBtn: document.getElementById('importBtn'),
+    leadUpdateBtn: document.getElementById('leadUpdateBtn'),
     
     // Manual number controls
     manualNumber: document.getElementById('manualNumber'),
@@ -865,6 +866,11 @@
     }
     if (DOM.importBtn) {
       DOM.importBtn.addEventListener('click', importData);
+    }
+    if (DOM.leadUpdateBtn) {
+      DOM.leadUpdateBtn.addEventListener('click', () => {
+        window.open('https://sihab03s.github.io/Affilancers-Lead-Update/', '_blank', 'noopener,noreferrer');
+      });
     }
     DOM.settingsModal.addEventListener('click', (e) => {
       if (e.target === DOM.settingsModal) closeModal();
