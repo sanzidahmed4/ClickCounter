@@ -12,9 +12,14 @@
   <!-- HEADER — body এর একদম উপরে থাকবে (scene এর বাইরে) -->
   <header class="site-header">
     <div class="header-left">
-      <div class="logo-wrap" id="logoWrap" title="Affilancers">
-        <div class="brand">
-          <div class="brand-token" aria-hidden="true">A</div>
+        <div class="logo-wrap" id="logoWrap" title="Affilancers">
+          <div class="brand">
+          <div class="brand-token" aria-hidden="true">
+            <picture>
+              <source srcset="logo.svg" type="image/svg+xml" />
+              <img src="logo.png" alt="" class="brand-logo" />
+            </picture>
+          </div>
           <div class="brand-word">Affilancers</div>
         </div>
       </div>
@@ -78,27 +83,27 @@
 
         <section class="modal-body">
           <!-- EXPORT/IMPORT SECTION -->
-          <div class="export-import-section">
-            <label>Backup & Restore</label>
-            <div class="backup-actions">
-              <button class="pill pill-teal" id="exportBtn" title="Export data as JSON (e)">📥 Export Data</button>
-              <button class="pill pill-teal" id="importBtn" title="Import data from JSON (i)">📤 Import Data</button>
+            <div class="export-import-section">
+              <label>Backup & Restore</label>
+              <div class="backup-actions">
+                <button class="pill pill-teal compact-btn" id="exportBtn" title="Export data as JSON (e)">Export Data</button>
+                <button class="pill pill-teal compact-btn" id="importBtn" title="Import data from JSON (i)">Import Data</button>
+              </div>
             </div>
-          </div>
 
           <hr/>
 
           <div class="manual-number">
             <label>Manual adjust number</label>
             <div class="manual-controls">
-              <button class="pill pill-red" id="decManual" aria-label="Decrease manual value">−</button>
+              <button class="pill pill-red compact-btn" id="decManual" aria-label="Decrease manual value">−</button>
               <input type="number" id="manualNumber" value="1" min="0" aria-label="Manual number value" />
-              <button class="pill pill-red" id="incManual" aria-label="Increase manual value">+</button>
+              <button class="pill pill-red compact-btn" id="incManual" aria-label="Increase manual value">+</button>
             </div>
             <div class="manual-actions">
-              <button class="pill pill-red" id="applyAdd" title="Add this number">Add</button>
-              <button class="pill pill-red" id="applySub" title="Subtract this number">Subtract</button>
-              <button class="pill pill-red" id="setExact" title="Set exact value">Set exact</button>
+              <button class="pill pill-red compact-btn" id="applyAdd" title="Add this number">Add</button>
+              <button class="pill pill-red compact-btn" id="applySub" title="Subtract this number">Subtract</button>
+              <button class="pill pill-red compact-btn" id="setExact" title="Set exact value">Set exact</button>
             </div>
           </div>
 
@@ -122,16 +127,40 @@
                 <label>Glass opacity</label>
                 <input type="range" id="glassOpacity" min="0.1" max="0.9" step="0.01" value="0.45" aria-label="Glass effect opacity" />
               </div>
-              <div class="theme-input">
-                <label>Accent white (text)</label>
-                <input type="color" id="accentColor" value="#ffffff" aria-label="Text accent color" />
+            </div>
+
+            <div class="theme-presets">
+              <label>Ready themes</label>
+              <div class="preset-swatches" aria-label="Theme presets">
+                <button class="preset-swatch" data-preset="default" type="button" title="Default Soft"></button>
+                <button class="preset-swatch" data-preset="dark" type="button" title="Dark Mode"></button>
+                <button class="preset-swatch" data-preset="mist" type="button" title="Mist Minimal"></button>
+                <button class="preset-swatch" data-preset="sand" type="button" title="Sand Minimal"></button>
               </div>
             </div>
 
             <div class="theme-actions">
-              <button class="pill pill-teal" id="previewTheme" title="Preview theme">Preview</button>
-              <button class="pill pill-teal" id="saveTheme" title="Save theme">Save Theme</button>
-              <button class="pill pill-teal" id="resetTheme" title="Reset to default">Reset Theme</button>
+              <button class="pill pill-teal compact-btn" id="previewTheme" title="Preview theme">Preview</button>
+              <button class="pill pill-teal compact-btn" id="saveTheme" title="Save theme">Save Theme</button>
+              <button class="pill pill-teal compact-btn" id="resetTheme" title="Reset to default">Reset Theme</button>
+            </div>
+          </div>
+
+          <hr/>
+          <div class="shortcut-section">
+            <label>Keyboard shortcuts</label>
+            <div class="shortcut-list">
+              <kbd>+</kbd> / <kbd>−</kbd> : count up/down
+              <span>•</span>
+              <kbd>r</kbd> : reset
+              <span>•</span>
+              <kbd>z</kbd> : undo
+              <span>•</span>
+              <kbd>s</kbd> : stats
+              <span>•</span>
+              <kbd>e</kbd> : export
+              <span>•</span>
+              <kbd>i</kbd> : import
             </div>
           </div>
 
@@ -157,9 +186,6 @@
   <footer class="site-footer">
     <div class="footer-text">
       <span>Affilancers ClickCounter system ©2025 — Developed by SANZID</span>
-      <span class="footer-shortcuts" title="Keyboard shortcuts">
-        Shortcuts: <kbd>+</kbd> <kbd>−</kbd> <kbd>r</kbd> <kbd>z</kbd> <kbd>s</kbd> <kbd>e</kbd> <kbd>i</kbd>
-      </span>
     </div>
   </footer>
 
