@@ -98,6 +98,13 @@ input, button, textarea, select {
   font-size:18px;
   letter-spacing:1px;
   text-transform:uppercase;
+  overflow:hidden;
+}
+.logo-wrap .brand-logo{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  display:block;
 }
 .logo-wrap .brand-word{
   font-size:15px;
