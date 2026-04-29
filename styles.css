@@ -271,7 +271,6 @@ input, button, textarea, select {
 
 /* FOOTER (fixed) */
 .site-footer{
-  height: var(--footer-h);
   position:fixed;
   left:0;
   width:100%;
