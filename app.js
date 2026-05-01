@@ -744,6 +744,7 @@
     const presets = {
       default: { top: '#79bfe9', bottom: '#f0b79a', glass: 0.45, glass2: 0.06 },
       dark: { top: '#1b2533', mid1: '#243243', mid2: '#2f3f52', bottom: '#3a4659', glass: 0.22, glass2: 0.08 },
+      deepmint: { top: '#1A6060', mid1: '#476f6f', mid2: '#627f7f', bottom: '#7A9090', glass: 0.38, glass2: 0.08 },
       mist: { top: '#d7e6ef', mid1: '#dce8e8', mid2: '#e3e0d7', bottom: '#eadfce', glass: 0.5, glass2: 0.08 },
       sand: { top: '#e7d9cb', mid1: '#e7ddcf', mid2: '#dfd8cf', bottom: '#d4d1cf', glass: 0.5, glass2: 0.08 }
     };
