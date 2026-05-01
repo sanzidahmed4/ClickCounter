@@ -173,13 +173,14 @@ input, button, textarea, select {
 }
 
 .impression-text{
-  min-height: 30px;
+  min-height: 20px;
   min-width: 140px;
   max-width: 240px;
+  letter-spacing: 5px;
   text-align:center;
   color: var(--accent-white);
   opacity: 0.5;
-  font-size: 36px;
+  font-size: 20px;
   line-height: 1.1;
   font-family: "Roboto", "Inter", "Segoe UI", Arial, sans-serif;
   font-weight: 400;
