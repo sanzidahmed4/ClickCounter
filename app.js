@@ -263,6 +263,14 @@
     return normalized.slice(0, 15);
   }
 
+  function isTypingContext(target) {
+    if (!target) return false;
+    const tag = target.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return true;
+    if (target.isContentEditable) return true;
+    return Boolean(target.closest && target.closest('[contenteditable="true"]'));
+  }
+
   // ============================================================================
   // STORAGE OPERATIONS
   // ============================================================================
@@ -982,7 +990,7 @@
     // ---- KEYBOARD SHORTCUTS ----
     document.addEventListener('keydown', (e) => {
       // Don't trigger shortcuts when typing in inputs
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+      if (isTypingContext(e.target)) {
         return;
       }
 
@@ -995,7 +1003,7 @@
 
     // ---- GLOBAL SHORTCUTS (press 's' to show stats, 'e' to export, 'i' to import) ----
     document.addEventListener('keydown', (e) => {
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+      if (isTypingContext(e.target)) {
         return;
       }
 
