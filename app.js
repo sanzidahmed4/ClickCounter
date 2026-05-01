@@ -18,6 +18,7 @@
     STORAGE_KEY: 'clickCounter_v2',
     START_KEY: 'clickCounter_startedAt',
     THEME_KEY: 'clickCounter_theme_v2',
+    IMPRESSION_KEY: 'clickCounter_impression_v1',
     HISTORY_KEY: 'clickCounter_history_v2',
     UNDO_KEY: 'clickCounter_undo_v2',
     
@@ -57,6 +58,7 @@
     // Main elements
     countEl: document.getElementById('count'),
     meter: document.getElementById('meter'),
+    impressionText: document.getElementById('impressionText'),
     controls: document.querySelector('.controls'),
     resetBtn: document.getElementById('resetBtn'),
     
@@ -254,6 +256,11 @@
     const g = parseInt(m[2]).toString(16).padStart(2, '0');
     const b = parseInt(m[3]).toString(16).padStart(2, '0');
     return `#${r}${g}${b}`;
+  }
+
+  function sanitizeImpressionText(value) {
+    const normalized = String(value || '').replace(/\s+/g, ' ').trim();
+    return normalized.slice(0, 15);
   }
 
   // ============================================================================
@@ -690,6 +697,25 @@
     }
   }
 
+  function loadImpression() {
+    if (!DOM.impressionText) return;
+    try {
+      const saved = localStorage.getItem(CONFIG.IMPRESSION_KEY);
+      const nextText = sanitizeImpressionText(saved || 'Impression') || 'Impression';
+      DOM.impressionText.textContent = nextText;
+    } catch (e) {
+      DOM.impressionText.textContent = 'Impression';
+    }
+  }
+
+  function saveImpression(text) {
+    try {
+      localStorage.setItem(CONFIG.IMPRESSION_KEY, sanitizeImpressionText(text) || 'Impression');
+    } catch (e) {
+      console.warn('impression save failed:', e);
+    }
+  }
+
   function getGlassOpacityValue() {
     if (!DOM.glassOpacity) return 0.45;
     return Number(DOM.glassOpacity.value) || 0.45;
@@ -985,6 +1011,35 @@
         importData();
       }
     });
+
+    if (DOM.impressionText) {
+      DOM.impressionText.addEventListener('focus', () => {
+        DOM.impressionText.dataset.beforeEdit = DOM.impressionText.textContent || '';
+      });
+      DOM.impressionText.addEventListener('input', () => {
+        const cleaned = sanitizeImpressionText(DOM.impressionText.textContent);
+        if (cleaned !== DOM.impressionText.textContent) {
+          DOM.impressionText.textContent = cleaned;
+          const range = document.createRange();
+          range.selectNodeContents(DOM.impressionText);
+          range.collapse(false);
+          const sel = window.getSelection();
+          sel.removeAllRanges();
+          sel.addRange(range);
+        }
+      });
+      DOM.impressionText.addEventListener('blur', () => {
+        const finalText = sanitizeImpressionText(DOM.impressionText.textContent) || 'Impression';
+        DOM.impressionText.textContent = finalText;
+        saveImpression(finalText);
+      });
+      DOM.impressionText.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          DOM.impressionText.blur();
+        }
+      });
+    }
   }
 
   // ============================================================================
@@ -1001,6 +1056,7 @@
     render();
     initListeners();
     loadTheme();
+    loadImpression();
 
     // Add CSS animation keyframes dynamically
     const style = document.createElement('style');

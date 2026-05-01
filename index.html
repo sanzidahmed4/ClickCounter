@@ -50,6 +50,16 @@
   <!-- SCENE — শুধু counter app থাকবে -->
   <div class="scene">
     <main class="app">
+      <div
+        id="impressionText"
+        class="impression-text"
+        contenteditable="true"
+        role="textbox"
+        aria-label="Custom impression text"
+        spellcheck="false"
+        data-placeholder="Impression"
+      >Impression</div>
+
       <div class="meter" id="meter" role="button" tabindex="0"
            aria-label="Click the number to increase by one" aria-live="polite">
         <div id="count" class="count">0</div>
