@@ -18,6 +18,7 @@
     STORAGE_KEY: 'clickCounter_v2',
     START_KEY: 'clickCounter_startedAt',
     THEME_KEY: 'clickCounter_theme_v2',
+    IMPRESSION_KEY: 'clickCounter_impression_v1',
     HISTORY_KEY: 'clickCounter_history_v2',
     UNDO_KEY: 'clickCounter_undo_v2',
     
@@ -26,6 +27,7 @@
     HISTORY_MAX_ITEMS: 500,
     HISTORY_DISPLAY_ITEMS: 50,
     ANIMATION_DURATION: 220, // ms
+    SHOW_SAVE_TOAST: false,
     
     MILESTONE_THRESHOLDS: [10, 50, 100, 500, 1000, 5000, 10000],
   };
@@ -56,6 +58,7 @@
     // Main elements
     countEl: document.getElementById('count'),
     meter: document.getElementById('meter'),
+    impressionText: document.getElementById('impressionText'),
     controls: document.querySelector('.controls'),
     resetBtn: document.getElementById('resetBtn'),
     
@@ -65,8 +68,14 @@
     
     // Header & Modal
     settingsBtn: document.getElementById('settingsBtn'),
+    statsBtn: document.getElementById('statsBtn'),
     settingsModal: document.getElementById('settingsModal'),
     modalClose: document.getElementById('modalClose'),
+
+    // Data transfer controls
+    exportBtn: document.getElementById('exportBtn'),
+    importBtn: document.getElementById('importBtn'),
+    leadUpdateBtn: document.getElementById('leadUpdateBtn'),
     
     // Manual number controls
     manualNumber: document.getElementById('manualNumber'),
@@ -80,10 +89,10 @@
     themeTop: document.getElementById('themeTop'),
     themeBottom: document.getElementById('themeBottom'),
     glassOpacity: document.getElementById('glassOpacity'),
-    accentColor: document.getElementById('accentColor'),
     previewTheme: document.getElementById('previewTheme'),
     saveTheme: document.getElementById('saveTheme'),
     resetTheme: document.getElementById('resetTheme'),
+    presetButtons: document.querySelectorAll('.preset-swatch'),
     
     // History controls
     historyListEl: document.getElementById('historyList'),
@@ -163,6 +172,7 @@
    * Show auto-save indicator
    */
   function showAutoSaveIndicator() {
+    if (!CONFIG.SHOW_SAVE_TOAST) return;
     const indicator = document.createElement('div');
     indicator.style.cssText = `
       position: fixed;
@@ -222,6 +232,15 @@
     return `rgba(${r},${g},${b},${Number(alpha)})`;
   }
 
+  function blendHex(hexA, hexB, ratio = 0.5) {
+    const a = hexA.replace('#', '');
+    const b = hexB.replace('#', '');
+    const r = Math.round(parseInt(a.substring(0, 2), 16) * (1 - ratio) + parseInt(b.substring(0, 2), 16) * ratio);
+    const g = Math.round(parseInt(a.substring(2, 4), 16) * (1 - ratio) + parseInt(b.substring(2, 4), 16) * ratio);
+    const bl = Math.round(parseInt(a.substring(4, 6), 16) * (1 - ratio) + parseInt(b.substring(4, 6), 16) * ratio);
+    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${bl.toString(16).padStart(2, '0')}`;
+  }
+
   /**
    * Convert RGB/RGBA color to hex
    * @param {string} color - Color string (rgb, rgba, or hex)
@@ -237,6 +256,19 @@
     const g = parseInt(m[2]).toString(16).padStart(2, '0');
     const b = parseInt(m[3]).toString(16).padStart(2, '0');
     return `#${r}${g}${b}`;
+  }
+
+  function sanitizeImpressionText(value) {
+    const normalized = String(value || '').replace(/\s+/g, ' ').trim();
+    return normalized.slice(0, 15);
+  }
+
+  function isTypingContext(target) {
+    if (!target) return false;
+    const tag = target.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return true;
+    if (target.isContentEditable) return true;
+    return Boolean(target.closest && target.closest('[contenteditable="true"]'));
   }
 
   // ============================================================================
@@ -548,14 +580,27 @@
       reader.onload = function (event) {
         try {
           const data = JSON.parse(event.target.result);
+          if (!data || typeof data !== 'object') {
+            throw new Error('Invalid backup format');
+          }
 
-          if (typeof data.count === 'number') {
-            state.count = data.count;
+          if (Number.isFinite(data.count)) {
+            state.count = Math.max(0, Number(data.count));
           }
+
           if (Array.isArray(data.history)) {
-            state.history = data.history;
+            state.history = data.history
+              .filter((item) => item && typeof item === 'object')
+              .map((item) => ({
+                when: item.when || nowISO(),
+                delta: Number(item.delta) || 0,
+                type: String(item.type || 'change'),
+                newCount: Math.max(0, Number(item.newCount) || 0)
+              }))
+              .slice(0, CONFIG.HISTORY_MAX_ITEMS);
           }
-          if (data.startedAt) {
+
+          if (typeof data.startedAt === 'string' && data.startedAt) {
             state.startedAt = data.startedAt;
           }
 
@@ -627,10 +672,11 @@
 
     const root = document.documentElement;
     if (theme.top) root.style.setProperty('--bg-top', theme.top);
+    root.style.setProperty('--bg-mid-1', theme.mid1 || blendHex(theme.top || '#79bfe9', theme.bottom || '#f0b79a', 0.35));
+    root.style.setProperty('--bg-mid-2', theme.mid2 || blendHex(theme.top || '#79bfe9', theme.bottom || '#f0b79a', 0.7));
     if (theme.bottom) root.style.setProperty('--bg-bottom', theme.bottom);
     if (theme.glass) root.style.setProperty('--glass', hexToRgba('#ffffff', theme.glass));
     if (theme.glass2) root.style.setProperty('--glass-2', hexToRgba('#ffffff', theme.glass2));
-    if (theme.accent) root.style.setProperty('--accent-white', theme.accent);
 
     if (persist) {
       try {
@@ -654,11 +700,33 @@
 
       if (theme.top) DOM.themeTop.value = theme.top;
       if (theme.bottom) DOM.themeBottom.value = theme.bottom;
-      if (typeof theme.glass === 'number') DOM.glassOpacity.value = theme.glass;
-      if (theme.accent) DOM.accentColor.value = theme.accent;
     } catch (e) {
       console.warn('load theme:', e);
     }
+  }
+
+  function loadImpression() {
+    if (!DOM.impressionText) return;
+    try {
+      const saved = localStorage.getItem(CONFIG.IMPRESSION_KEY);
+      const nextText = sanitizeImpressionText(saved || 'Impression') || 'Impression';
+      DOM.impressionText.textContent = nextText;
+    } catch (e) {
+      DOM.impressionText.textContent = 'Impression';
+    }
+  }
+
+  function saveImpression(text) {
+    try {
+      localStorage.setItem(CONFIG.IMPRESSION_KEY, sanitizeImpressionText(text) || 'Impression');
+    } catch (e) {
+      console.warn('impression save failed:', e);
+    }
+  }
+
+  function getGlassOpacityValue() {
+    if (!DOM.glassOpacity) return 0.45;
+    return Number(DOM.glassOpacity.value) || 0.45;
   }
 
   /**
@@ -670,16 +738,25 @@
       top: '#79bfe9',
       bottom: '#f0b79a',
       glass: 0.45,
-      glass2: 0.06,
-      accent: '#ffffff'
+      glass2: 0.06
     };
 
     applyTheme(defaultTheme, false);
 
     DOM.themeTop.value = defaultTheme.top;
     DOM.themeBottom.value = defaultTheme.bottom;
-    DOM.glassOpacity.value = defaultTheme.glass;
-    DOM.accentColor.value = defaultTheme.accent;
+    if (DOM.glassOpacity) DOM.glassOpacity.value = defaultTheme.glass;
+  }
+
+  function getPresetTheme(name) {
+    const presets = {
+      default: { top: '#79bfe9', bottom: '#f0b79a', glass: 0.45, glass2: 0.06 },
+      dark: { top: '#1b2533', mid1: '#243243', mid2: '#2f3f52', bottom: '#3a4659', glass: 0.22, glass2: 0.08 },
+      deepmint: { top: '#1A6060', mid1: '#476f6f', mid2: '#627f7f', bottom: '#7A9090', glass: 0.38, glass2: 0.08 },
+      mist: { top: '#d7e6ef', mid1: '#dce8e8', mid2: '#e3e0d7', bottom: '#eadfce', glass: 0.5, glass2: 0.08 },
+      sand: { top: '#e7d9cb', mid1: '#e7ddcf', mid2: '#dfd8cf', bottom: '#d4d1cf', glass: 0.5, glass2: 0.08 }
+    };
+    return presets[name] || presets.default;
   }
 
   // ============================================================================
@@ -818,7 +895,22 @@
 
     // ---- MODAL MANAGEMENT ----
     DOM.settingsBtn.addEventListener('click', openModal);
+    if (DOM.statsBtn) {
+      DOM.statsBtn.addEventListener('click', showStatistics);
+    }
     DOM.modalClose.addEventListener('click', closeModal);
+
+    if (DOM.exportBtn) {
+      DOM.exportBtn.addEventListener('click', exportData);
+    }
+    if (DOM.importBtn) {
+      DOM.importBtn.addEventListener('click', importData);
+    }
+    if (DOM.leadUpdateBtn) {
+      DOM.leadUpdateBtn.addEventListener('click', () => {
+        window.open('https://sihab03s.github.io/Affilancers-Lead-Update/', '_blank', 'noopener,noreferrer');
+      });
+    }
     DOM.settingsModal.addEventListener('click', (e) => {
       if (e.target === DOM.settingsModal) closeModal();
     });
@@ -835,12 +927,10 @@
     });
     DOM.applyAdd.addEventListener('click', () => {
       const v = Number(DOM.manualNumber.value) || 0;
-      recordUndo();
       changeBy(v);
     });
     DOM.applySub.addEventListener('click', () => {
       const v = Number(DOM.manualNumber.value) || 0;
-      recordUndo();
       changeBy(-v);
     });
     DOM.setExact.addEventListener('click', () => {
@@ -858,9 +948,8 @@
       applyTheme({
         top: DOM.themeTop.value,
         bottom: DOM.themeBottom.value,
-        glass: Number(DOM.glassOpacity.value),
-        glass2: Math.max(0.01, Number(DOM.glassOpacity.value) - 0.35),
-        accent: DOM.accentColor.value
+        glass: getGlassOpacityValue(),
+        glass2: Math.max(0.01, getGlassOpacityValue() - 0.35)
       }, false);
     });
 
@@ -868,13 +957,22 @@
       const theme = {
         top: DOM.themeTop.value,
         bottom: DOM.themeBottom.value,
-        glass: Number(DOM.glassOpacity.value),
-        glass2: Math.max(0.01, Number(DOM.glassOpacity.value) - 0.35),
-        accent: DOM.accentColor.value
+        glass: getGlassOpacityValue(),
+        glass2: Math.max(0.01, getGlassOpacityValue() - 0.35)
       };
       applyTheme(theme, true);
       alert(MESSAGES.THEME_SAVED);
       closeModal();
+    });
+
+    DOM.presetButtons.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const preset = getPresetTheme(btn.dataset.preset);
+        applyTheme(preset, false);
+        DOM.themeTop.value = preset.top;
+        DOM.themeBottom.value = preset.bottom;
+        if (DOM.glassOpacity) DOM.glassOpacity.value = preset.glass;
+      });
     });
 
     DOM.resetTheme.addEventListener('click', () => {
@@ -892,7 +990,7 @@
     // ---- KEYBOARD SHORTCUTS ----
     document.addEventListener('keydown', (e) => {
       // Don't trigger shortcuts when typing in inputs
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+      if (isTypingContext(e.target)) {
         return;
       }
 
@@ -905,7 +1003,7 @@
 
     // ---- GLOBAL SHORTCUTS (press 's' to show stats, 'e' to export, 'i' to import) ----
     document.addEventListener('keydown', (e) => {
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+      if (isTypingContext(e.target)) {
         return;
       }
 
@@ -922,6 +1020,35 @@
         importData();
       }
     });
+
+    if (DOM.impressionText) {
+      DOM.impressionText.addEventListener('focus', () => {
+        DOM.impressionText.dataset.beforeEdit = DOM.impressionText.textContent || '';
+      });
+      DOM.impressionText.addEventListener('input', () => {
+        const cleaned = sanitizeImpressionText(DOM.impressionText.textContent);
+        if (cleaned !== DOM.impressionText.textContent) {
+          DOM.impressionText.textContent = cleaned;
+          const range = document.createRange();
+          range.selectNodeContents(DOM.impressionText);
+          range.collapse(false);
+          const sel = window.getSelection();
+          sel.removeAllRanges();
+          sel.addRange(range);
+        }
+      });
+      DOM.impressionText.addEventListener('blur', () => {
+        const finalText = sanitizeImpressionText(DOM.impressionText.textContent) || 'Impression';
+        DOM.impressionText.textContent = finalText;
+        saveImpression(finalText);
+      });
+      DOM.impressionText.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          DOM.impressionText.blur();
+        }
+      });
+    }
   }
 
   // ============================================================================
@@ -938,6 +1065,7 @@
     render();
     initListeners();
     loadTheme();
+    loadImpression();
 
     // Add CSS animation keyframes dynamically
     const style = document.createElement('style');
