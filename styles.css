@@ -7,6 +7,8 @@
   --header-h: 72px;
   --footer-h: 56px;
   --bg-top: #79bfe9;
+  --bg-mid-1: #a7cee9;
+  --bg-mid-2: #d9bfb2;
   --bg-bottom: #f0b79a;
   --glass: rgba(255,255,255,0.45);
   --glass-2: rgba(255,255,255,0.06);
@@ -14,6 +16,8 @@
   --pill-radius: 999px;
   --fw: 600;
   --accent-white: #ffffff;
+  --soft-card: rgba(255,255,255,0.08);
+  --soft-border: rgba(255,255,255,0.16);
   font-family: "Inter", "Segoe UI", Roboto, -apple-system, system-ui, Arial;
 }
 
@@ -25,7 +29,7 @@ body{
   margin:0;
   min-height:100vh; /* ensure gradient covers full viewport height */
   /* gradient background - ensure no repeat and fill */
-  background: linear-gradient(180deg, var(--bg-top) 0%, #a7cee9 35%, #d9bfb2 70%, var(--bg-bottom) 100%);
+  background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-mid-1) 35%, var(--bg-mid-2) 70%, var(--bg-bottom) 100%);
   background-repeat: no-repeat;
   background-attachment: fixed; /* helps keep gradient stable when scrolling */
   background-size: 100% 100%;
@@ -94,6 +98,13 @@ input, button, textarea, select {
   font-size:18px;
   letter-spacing:1px;
   text-transform:uppercase;
+  overflow:hidden;
+}
+.logo-wrap .brand-logo{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  display:block;
 }
 .logo-wrap .brand-word{
   font-size:15px;
@@ -161,6 +172,28 @@ input, button, textarea, select {
   gap:16px;
 }
 
+.impression-text{
+  min-height: 30px;
+  min-width: 140px;
+  max-width: 240px;
+  text-align:center;
+  color: var(--accent-white);
+  opacity: 0.5;
+  font-size: 36px;
+  line-height: 1.1;
+  font-family: "Roboto", "Inter", "Segoe UI", Arial, sans-serif;
+  font-weight: 400;
+  border: 0;
+  outline: none;
+  background: transparent;
+  cursor: text;
+  user-select: text;
+}
+.impression-text:empty::before{
+  content: attr(data-placeholder);
+  opacity: 0.9;
+}
+
 /* meter (big glass card) */
 .meter{
   width:100%;
@@ -223,7 +256,7 @@ input, button, textarea, select {
   gap:8px;
 }
 .pill-red{ background: linear-gradient(180deg,#ff7a55,#e24d28); }
-.pill-teal{ background: linear-gradient(180deg,#2bb4a9,#0db39a); }
+.pill-teal{ background: linear-gradient(180deg,#4aa6cf,#2a86b0); }
 .pill-blue{ background: linear-gradient(180deg,#103c9e,#1a57c6); }
 .pill-yellow{ background: linear-gradient(180deg,#ffd86b,#f1b940); color:#0e2b00; }
 
@@ -314,8 +347,84 @@ input, button, textarea, select {
 .modal-header h3{ margin:0; font-size:20px; letter-spacing:1px; }
 .close-btn{ background:transparent; border:0; color:var(--accent-white); font-size:18px; cursor:pointer; }
 .modal-body{ margin-top:12px; display:flex; flex-direction:column; gap:14px; }
+.modal-body hr{
+  width: 100%;
+  height: 1px;
+  border: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.22), transparent);
+  margin: 2px 0;
+}
 
-.manual-number label, .custom-theme label{ font-size:13px; color:rgba(255,255,255,0.95); margin-bottom:6px; display:block; }
+.export-import-section,
+.manual-number,
+.custom-theme,
+.history-section{
+  background: linear-gradient(180deg, var(--soft-card), rgba(255,255,255,0.03));
+  border: 1px solid var(--soft-border);
+  border-radius: 14px;
+  padding: 12px;
+}
+
+.export-import-section label,
+.manual-number label,
+.custom-theme label{
+  font-size:13px;
+  color:rgba(255,255,255,0.95);
+  margin-bottom:6px;
+  display:block;
+}
+
+.backup-actions{ display:flex; gap:10px; flex-wrap:wrap; }
+.preset-swatches{ display:flex; gap:10px; flex-wrap:wrap; }
+.preset-swatch{
+  width:34px;
+  height:34px;
+  border-radius:8px;
+  border:1px solid rgba(255,255,255,0.45);
+  box-shadow: 0 6px 14px rgba(0,0,0,0.18);
+  cursor:pointer;
+}
+.preset-swatch:nth-child(1){ background: linear-gradient(180deg,#79bfe9,#f0b79a); }
+.preset-swatch:nth-child(2){ background: linear-gradient(180deg,#1b2533,#3a4659); }
+.preset-swatch:nth-child(3){ background: linear-gradient(180deg,#1A6060,#7A9090); }
+.preset-swatch:nth-child(4){ background: linear-gradient(180deg,#d7e6ef,#eadfce); }
+.preset-swatch:nth-child(5){ background: linear-gradient(180deg,#e7d9cb,#d4d1cf); }
+.preset-swatch:focus{
+  outline:2px solid rgba(255,255,255,0.7);
+  outline-offset:2px;
+}
+.compact-btn{
+  min-width:78px;
+  padding:9px 14px;
+  font-size:14px;
+}
+.shortcut-section{
+  background: linear-gradient(180deg, var(--soft-card), rgba(255,255,255,0.03));
+  border: 1px solid var(--soft-border);
+  border-radius: 14px;
+  padding: 12px;
+}
+.shortcut-section label{
+  display:block;
+  font-size:13px;
+  margin-bottom:6px;
+}
+.shortcut-list{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:8px;
+  font-size:13px;
+  color:rgba(255,255,255,0.92);
+}
+.shortcut-list span{ opacity:0.65; }
+kbd{
+  padding:2px 6px;
+  border-radius:6px;
+  border:1px solid rgba(255,255,255,0.25);
+  background: rgba(255,255,255,0.12);
+}
+
 .manual-controls{ display:flex; align-items:center; gap:12px; }
 .manual-controls input[type="number"]{
   width:90px;
@@ -330,6 +439,7 @@ input, button, textarea, select {
 .manual-actions{ display:flex; gap:10px; margin-top:8px; flex-wrap:wrap; }
 .theme-row{ display:flex; gap:12px; align-items:center; margin-top:6px; flex-wrap:wrap; }
 .theme-input{ display:flex; flex-direction:column; gap:6px; }
+.theme-presets{ min-width:170px; }
 .theme-input input[type="color"]{ width:56px; height:36px; border-radius:8px; border:0; padding:2px; }
 .theme-actions{ display:flex; gap:8px; margin-top:12px; }
 
@@ -338,7 +448,7 @@ input, button, textarea, select {
 .history-header{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
 .history-header h4, .history-header label{ margin:0; font-size:15px; color:rgba(255,255,255,0.95); }
 .history-actions{ display:flex; gap:8px; }
-.history-list, .history-list > .history-item, .history-item {
+.history-list {
   margin:8px 0 0 0;
   padding:8px;
   max-height:220px;
@@ -383,4 +493,18 @@ input, button, textarea, select {
   .modal{ padding:14px; }
   .modal-header h3{ font-size:18px; }
   .footer-text{ font-size:12px; padding:6px 10px; }
+  .modal .pill,
+  .modal .compact-btn{
+    min-width: 0;
+    width: 100%;
+    padding: 9px 10px;
+    font-size: 13px;
+  }
+  .backup-actions,
+  .manual-actions,
+  .theme-actions{
+    display:grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap:8px;
+  }
 }
