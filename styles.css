@@ -261,6 +261,28 @@ input, button, textarea, select {
 }
 
 .impression-text{
+  min-height: 30px;
+  min-width: 140px;
+  max-width: 240px;
+  text-align:center;
+  color: var(--accent-white);
+  opacity: 0.5;
+  font-size: 36px;
+  line-height: 1.1;
+  font-family: "Roboto", "Inter", "Segoe UI", Arial, sans-serif;
+  font-weight: 400;
+  border: 0;
+  outline: none;
+  background: transparent;
+  cursor: text;
+  user-select: text;
+}
+.impression-text:empty::before{
+  content: attr(data-placeholder);
+  opacity: 0.9;
+}
+
+.impression-text{
   min-height: 20px;
   min-width: 140px;
   max-width: 240px;
@@ -595,4 +617,10 @@ kbd{
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap:8px;
   }
+}
+
+@media (max-height:400px){
+  .site-header{ display:none; }
+  body{ padding-top: 0; }
+  .scene{ min-height: calc(100vh - var(--footer-h)); }
 }
