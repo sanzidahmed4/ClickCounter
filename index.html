@@ -1,6 +1,15 @@
 <!doctype html>
 <html lang="bn">
 <head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-9FTDWYRNNS"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-9FTDWYRNNS');
+  </script>
   <meta charset="utf-8" />
   <!-- viewport kept correct; do NOT lock maximum-scale to preserve accessibility -->
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -12,9 +21,14 @@
   <!-- HEADER — body এর একদম উপরে থাকবে (scene এর বাইরে) -->
   <header class="site-header">
     <div class="header-left">
-      <div class="logo-wrap" id="logoWrap" title="Affilancers">
-        <div class="brand">
-          <div class="brand-token" aria-hidden="true">A</div>
+        <div class="logo-wrap" id="logoWrap" title="Affilancers">
+          <div class="brand">
+          <div class="brand-token" aria-hidden="true">
+            <picture>
+              <source srcset="logo.svg" type="image/svg+xml" />
+              <img src="logo.png" alt="" class="brand-logo" />
+            </picture>
+          </div>
           <div class="brand-word">Affilancers</div>
         </div>
       </div>
@@ -25,10 +39,9 @@
     </div>
 
     <div class="header-right">
-      <button id="statsBtn" class="icon-btn" aria-label="Show statistics (press 's')" title="Show statistics">
+      <button id="addMeterBtn" class="icon-btn" aria-label="Add secondary meter" title="Add secondary meter">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"
-            d="M3 12h3v6H3zM8 8h3v10H8zM13 4h3v14h-3zM18 10h3v8h-3z"></path>
+          <path stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"></path>
         </svg>
       </button>
       <button id="settingsBtn" class="icon-btn" aria-haspopup="dialog" aria-controls="settingsModal" title="Settings">
@@ -45,6 +58,18 @@
   <!-- SCENE — শুধু counter app থাকবে -->
   <div class="scene">
     <main class="app">
+      <div class="meters-wrap" id="metersWrap">
+      <section class="meter-card" id="mainCard">
+      <div
+        id="impressionText"
+        class="impression-text"
+        contenteditable="true"
+        role="textbox"
+        aria-label="Custom impression text"
+        spellcheck="false"
+        data-placeholder="Impression"
+      >Impression</div>
+
       <div class="meter" id="meter" role="button" tabindex="0"
            aria-label="Click the number to increase by one" aria-live="polite">
         <div id="count" class="count">0</div>
@@ -64,6 +89,27 @@
         <div>Session started: <span id="startedAt">—</span></div>
         <div>Last saved: <span id="lastSaved">—</span></div>
       </div>
+      </section>
+
+      <section class="meter-card secondary-card hidden" id="secondaryCard">
+        <button id="secondaryDeleteBtn" class="icon-btn secondary-delete" title="Delete secondary meter" aria-label="Delete secondary meter">🗑</button>
+        <div id="impressionText2" class="impression-text" contenteditable="true" role="textbox" spellcheck="false" data-placeholder="Impression">Impression</div>
+        <div class="meter" id="meter2" role="button" tabindex="0" aria-label="Secondary click meter">
+          <div id="count2" class="count">0</div>
+        </div>
+        <div class="controls" id="controls2">
+          <button class="pill pill-red" data-action="dec" data-value="-1">− 1</button>
+          <button class="pill pill-red" data-action="inc" data-value="1">+ 1</button>
+          <button class="pill pill-red" data-action="inc" data-value="5">+ 5</button>
+          <button class="pill pill-red" data-action="inc" data-value="10">+ 10</button>
+          <button class="pill pill-red" id="resetBtn2">⟳ RESET</button>
+        </div>
+        <div class="meta">
+          <div>Secondary started: <span id="startedAt2">—</span></div>
+          <div>Last saved: <span id="lastSaved2">—</span></div>
+        </div>
+      </section>
+      </div>
     </main>
 
     <div class="sparkle" aria-hidden="true"></div>
@@ -78,27 +124,42 @@
 
         <section class="modal-body">
           <!-- EXPORT/IMPORT SECTION -->
-          <div class="export-import-section">
-            <label>Backup & Restore</label>
-            <div class="backup-actions">
-              <button class="pill pill-teal" id="exportBtn" title="Export data as JSON (e)">📥 Export Data</button>
-              <button class="pill pill-teal" id="importBtn" title="Import data from JSON (i)">📤 Import Data</button>
+            <div class="export-import-section">
+              <label>Backup & Restore</label>
+              <div class="backup-actions">
+                <button class="pill pill-teal compact-btn" id="exportBtn" title="Export data as JSON (e)">Export Data</button>
+                <button class="pill pill-teal compact-btn" id="importBtn" title="Import data from JSON (i)">Import Data</button>
+                <button class="pill pill-teal compact-btn" id="leadUpdateBtn" title="Open lead update page">Lead Update</button>
+              </div>
             </div>
-          </div>
 
           <hr/>
 
           <div class="manual-number">
             <label>Manual adjust number</label>
             <div class="manual-controls">
-              <button class="pill pill-red" id="decManual" aria-label="Decrease manual value">−</button>
+              <button class="pill pill-red compact-btn" id="decManual" aria-label="Decrease manual value">−</button>
               <input type="number" id="manualNumber" value="1" min="0" aria-label="Manual number value" />
-              <button class="pill pill-red" id="incManual" aria-label="Increase manual value">+</button>
+              <button class="pill pill-red compact-btn" id="incManual" aria-label="Increase manual value">+</button>
             </div>
             <div class="manual-actions">
-              <button class="pill pill-red" id="applyAdd" title="Add this number">Add</button>
-              <button class="pill pill-red" id="applySub" title="Subtract this number">Subtract</button>
-              <button class="pill pill-red" id="setExact" title="Set exact value">Set exact</button>
+              <button class="pill pill-red compact-btn" id="applyAdd" title="Add this number">Add</button>
+              <button class="pill pill-red compact-btn" id="applySub" title="Subtract this number">Subtract</button>
+              <button class="pill pill-red compact-btn" id="setExact" title="Set exact value">Set exact</button>
+            </div>
+          </div>
+
+          <div class="manual-number hidden" id="secondaryManualSection">
+            <label>Secondary manual adjust number</label>
+            <div class="manual-controls">
+              <button class="pill pill-red compact-btn" id="decManual2">−</button>
+              <input type="number" id="manualNumber2" value="1" min="0" />
+              <button class="pill pill-red compact-btn" id="incManual2">+</button>
+            </div>
+            <div class="manual-actions">
+              <button class="pill pill-red compact-btn" id="applyAdd2">Add</button>
+              <button class="pill pill-red compact-btn" id="applySub2">Subtract</button>
+              <button class="pill pill-red compact-btn" id="setExact2">Set exact</button>
             </div>
           </div>
 
@@ -115,23 +176,40 @@
                 <label>Bottom color</label>
                 <input type="color" id="themeBottom" value="#f0b79a" aria-label="Gradient bottom color" />
               </div>
-            </div>
-
-            <div class="theme-row">
-              <div class="theme-input">
-                <label>Glass opacity</label>
-                <input type="range" id="glassOpacity" min="0.1" max="0.9" step="0.01" value="0.45" aria-label="Glass effect opacity" />
-              </div>
-              <div class="theme-input">
-                <label>Accent white (text)</label>
-                <input type="color" id="accentColor" value="#ffffff" aria-label="Text accent color" />
+              <div class="theme-input theme-presets">
+                <label>Ready themes</label>
+                <div class="preset-swatches" aria-label="Theme presets">
+                  <button class="preset-swatch" data-preset="default" type="button" title="Default Soft"></button>
+                  <button class="preset-swatch" data-preset="dark" type="button" title="Dark Mode"></button>
+                  <button class="preset-swatch" data-preset="deepmint" type="button" title="Deep Mint"></button>
+                  <button class="preset-swatch" data-preset="mist" type="button" title="Mist Minimal"></button>
+                  <button class="preset-swatch" data-preset="sand" type="button" title="Sand Minimal"></button>
+                </div>
               </div>
             </div>
 
             <div class="theme-actions">
-              <button class="pill pill-teal" id="previewTheme" title="Preview theme">Preview</button>
-              <button class="pill pill-teal" id="saveTheme" title="Save theme">Save Theme</button>
-              <button class="pill pill-teal" id="resetTheme" title="Reset to default">Reset Theme</button>
+              <button class="pill pill-teal compact-btn" id="previewTheme" title="Preview theme">Preview</button>
+              <button class="pill pill-teal compact-btn" id="saveTheme" title="Save theme">Save Theme</button>
+              <button class="pill pill-teal compact-btn" id="resetTheme" title="Reset to default">Reset Theme</button>
+            </div>
+          </div>
+
+          <hr/>
+          <div class="shortcut-section">
+            <label>Keyboard shortcuts</label>
+            <div class="shortcut-list">
+              <kbd>+</kbd> / <kbd>−</kbd> : count up/down
+              <span>•</span>
+              <kbd>r</kbd> : reset
+              <span>•</span>
+              <kbd>z</kbd> : undo
+              <span>•</span>
+              <kbd>s</kbd> : stats
+              <span>•</span>
+              <kbd>e</kbd> : export
+              <span>•</span>
+              <kbd>i</kbd> : import
             </div>
           </div>
 
@@ -147,6 +225,14 @@
             </div>
           </div>
 
+          <div class="history-section hidden" id="secondaryHistorySection" aria-live="polite">
+            <div class="history-header">
+              <label>Secondary click history</label>
+              <div class="history-actions"><button class="pill pill-yellow" id="clearHistory2">Clear</button></div>
+            </div>
+            <div id="historyList2" class="history-list" role="log"></div>
+          </div>
+
         </section>
       </div>
     </div>
@@ -157,9 +243,6 @@
   <footer class="site-footer">
     <div class="footer-text">
       <span>Affilancers ClickCounter system ©2025 — Developed by SANZID</span>
-      <span class="footer-shortcuts" title="Keyboard shortcuts">
-        Shortcuts: <kbd>+</kbd> <kbd>−</kbd> <kbd>r</kbd> <kbd>z</kbd> <kbd>s</kbd> <kbd>e</kbd> <kbd>i</kbd>
-      </span>
     </div>
   </footer>
 
