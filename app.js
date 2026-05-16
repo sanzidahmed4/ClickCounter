@@ -32,7 +32,7 @@
     ANIMATION_DURATION: 220, // ms
     SHOW_SAVE_TOAST: false,
     
-    MILESTONE_THRESHOLDS: [10, 50, 100, 500, 1000, 5000, 10000],
+    MILESTONE_THRESHOLDS: [50, 100, 500, 1000, 5000, 10000],
   };
 
   const MESSAGES = {
@@ -40,7 +40,7 @@
     CLEAR_HISTORY: 'আপনি কি ক্লিক হিস্ট্রি মুছে ফেলতে চান?',
     RESET_THEME: 'Reset to default theme?',
     THEME_SAVED: 'Theme saved and applied for this session.',
-    MILESTONE: (num) => `🎉 Milestone reached: ${num} clicks!`,
+    MILESTONE: (num) => `Milestone reached: ${num} clicks!`,
   };
 
   const KEYBOARD_SHORTCUTS = {
@@ -863,6 +863,30 @@
       });
       DOM.impressionText2.addEventListener('blur', () => saveSecondary());
       DOM.impressionText2.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); DOM.impressionText2.blur(); }});
+    }
+  }
+
+  function getGlassOpacityValue() {
+    if (!DOM.glassOpacity) return 0.45;
+    return Number(DOM.glassOpacity.value) || 0.45;
+  }
+
+  function loadImpression() {
+    if (!DOM.impressionText) return;
+    try {
+      const saved = localStorage.getItem(CONFIG.IMPRESSION_KEY);
+      const nextText = sanitizeImpressionText(saved || 'Impression') || 'Impression';
+      DOM.impressionText.textContent = nextText;
+    } catch (e) {
+      DOM.impressionText.textContent = 'Impression';
+    }
+  }
+
+  function saveImpression(text) {
+    try {
+      localStorage.setItem(CONFIG.IMPRESSION_KEY, sanitizeImpressionText(text) || 'Impression');
+    } catch (e) {
+      console.warn('impression save failed:', e);
     }
   }
 
