@@ -871,30 +871,6 @@
     return Number(DOM.glassOpacity.value) || 0.45;
   }
 
-  function loadImpression() {
-    if (!DOM.impressionText) return;
-    try {
-      const saved = localStorage.getItem(CONFIG.IMPRESSION_KEY);
-      const nextText = sanitizeImpressionText(saved || 'Impression') || 'Impression';
-      DOM.impressionText.textContent = nextText;
-    } catch (e) {
-      DOM.impressionText.textContent = 'Impression';
-    }
-  }
-
-  function saveImpression(text) {
-    try {
-      localStorage.setItem(CONFIG.IMPRESSION_KEY, sanitizeImpressionText(text) || 'Impression');
-    } catch (e) {
-      console.warn('impression save failed:', e);
-    }
-  }
-
-  function getGlassOpacityValue() {
-    if (!DOM.glassOpacity) return 0.45;
-    return Number(DOM.glassOpacity.value) || 0.45;
-  }
-
   /**
    * Reset theme to default
    */
@@ -1037,6 +1013,13 @@
       if (e.code === 'Space' || e.code === 'Enter') {
         e.preventDefault();
         changeBy(1);
+      }
+    });
+    DOM.meter2?.addEventListener('click', () => changeBySecondary(1));
+    DOM.meter2?.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' || e.code === 'Enter') {
+        e.preventDefault();
+        changeBySecondary(1);
       }
     });
 
