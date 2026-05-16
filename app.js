@@ -21,6 +21,9 @@
     IMPRESSION_KEY: 'clickCounter_impression_v1',
     HISTORY_KEY: 'clickCounter_history_v2',
     UNDO_KEY: 'clickCounter_undo_v2',
+    SECONDARY_KEY: 'clickCounter_secondary_v1',
+    SECONDARY_HISTORY_KEY: 'clickCounter_secondary_history_v1',
+    SECONDARY_IMPRESSION_KEY: 'clickCounter_secondary_impression_v1',
     
     SAVE_INTERVAL: 4000, // ms - auto-save interval
     DEBOUNCE_DELAY: 500, // ms - debounce save operations
@@ -29,7 +32,7 @@
     ANIMATION_DURATION: 220, // ms
     SHOW_SAVE_TOAST: false,
     
-    MILESTONE_THRESHOLDS: [10, 50, 100, 500, 1000, 5000, 10000],
+    MILESTONE_THRESHOLDS: [50, 100, 500, 1000, 5000, 10000],
   };
 
   const MESSAGES = {
@@ -37,7 +40,7 @@
     CLEAR_HISTORY: 'আপনি কি ক্লিক হিস্ট্রি মুছে ফেলতে চান?',
     RESET_THEME: 'Reset to default theme?',
     THEME_SAVED: 'Theme saved and applied for this session.',
-    MILESTONE: (num) => `🎉 Milestone reached: ${num} clicks!`,
+    MILESTONE: (num) => `Milestone reached: ${num} clicks!`,
   };
 
   const KEYBOARD_SHORTCUTS = {
@@ -57,18 +60,27 @@
   const DOM = {
     // Main elements
     countEl: document.getElementById('count'),
+    countEl2: document.getElementById('count2'),
     meter: document.getElementById('meter'),
+    meter2: document.getElementById('meter2'),
     impressionText: document.getElementById('impressionText'),
+    impressionText2: document.getElementById('impressionText2'),
     controls: document.querySelector('.controls'),
+    controls2: document.getElementById('controls2'),
     resetBtn: document.getElementById('resetBtn'),
+    resetBtn2: document.getElementById('resetBtn2'),
+    secondaryCard: document.getElementById('secondaryCard'),
+    secondaryDeleteBtn: document.getElementById('secondaryDeleteBtn'),
     
     // Meta display
     startedAtEl: document.getElementById('startedAt'),
     lastSavedEl: document.getElementById('lastSaved'),
+    startedAtEl2: document.getElementById('startedAt2'),
+    lastSavedEl2: document.getElementById('lastSaved2'),
     
     // Header & Modal
     settingsBtn: document.getElementById('settingsBtn'),
-    statsBtn: document.getElementById('statsBtn'),
+    addMeterBtn: document.getElementById('addMeterBtn'),
     settingsModal: document.getElementById('settingsModal'),
     modalClose: document.getElementById('modalClose'),
 
@@ -97,6 +109,16 @@
     // History controls
     historyListEl: document.getElementById('historyList'),
     clearHistoryBtn: document.getElementById('clearHistory'),
+    historyListEl2: document.getElementById('historyList2'),
+    clearHistoryBtn2: document.getElementById('clearHistory2'),
+    secondaryManualSection: document.getElementById('secondaryManualSection'),
+    secondaryHistorySection: document.getElementById('secondaryHistorySection'),
+    manualNumber2: document.getElementById('manualNumber2'),
+    decManual2: document.getElementById('decManual2'),
+    incManual2: document.getElementById('incManual2'),
+    applyAdd2: document.getElementById('applyAdd2'),
+    applySub2: document.getElementById('applySub2'),
+    setExact2: document.getElementById('setExact2'),
   };
 
   // ============================================================================
@@ -111,6 +133,7 @@
     autoSaveScheduled: false,
     isSaving: false,
     milestonesSeen: new Set(),
+    secondary: { enabled:false, count:0, startedAt:null, lastSaved:null, history:[] },
   };
 
   // ============================================================================
@@ -287,6 +310,15 @@
         state.lastSaved = parsed.lastSaved || null;
       }
 
+      const s2 = localStorage.getItem(CONFIG.SECONDARY_KEY);
+      if (s2) {
+        const p2 = JSON.parse(s2);
+        state.secondary.enabled = Boolean(p2.enabled);
+        state.secondary.count = Math.max(0, Number(p2.count) || 0);
+        state.secondary.startedAt = p2.startedAt || null;
+        state.secondary.lastSaved = p2.lastSaved || null;
+      }
+
       const s = localStorage.getItem(CONFIG.START_KEY);
       if (s) {
         state.startedAt = s;
@@ -300,6 +332,15 @@
       state.lastSaved = null;
       state.startedAt = nowISO();
       localStorage.setItem(CONFIG.START_KEY, state.startedAt);
+    }
+
+    if (DOM.impressionText2) {
+      DOM.impressionText2.addEventListener('input', () => {
+        const cleaned = sanitizeImpressionText(DOM.impressionText2.textContent);
+        if (cleaned !== DOM.impressionText2.textContent) DOM.impressionText2.textContent = cleaned;
+      });
+      DOM.impressionText2.addEventListener('blur', () => saveSecondary());
+      DOM.impressionText2.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); DOM.impressionText2.blur(); }});
     }
   }
 
@@ -320,6 +361,15 @@
     } catch (e) {
       console.error('saveState error:', e);
       state.isSaving = false;
+    }
+
+    if (DOM.impressionText2) {
+      DOM.impressionText2.addEventListener('input', () => {
+        const cleaned = sanitizeImpressionText(DOM.impressionText2.textContent);
+        if (cleaned !== DOM.impressionText2.textContent) DOM.impressionText2.textContent = cleaned;
+      });
+      DOM.impressionText2.addEventListener('blur', () => saveSecondary());
+      DOM.impressionText2.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); DOM.impressionText2.blur(); }});
     }
   }, CONFIG.DEBOUNCE_DELAY);
 
@@ -346,9 +396,20 @@
         return;
       }
       state.history = JSON.parse(raw) || [];
+      const raw2 = localStorage.getItem(CONFIG.SECONDARY_HISTORY_KEY);
+      state.secondary.history = raw2 ? (JSON.parse(raw2) || []) : [];
     } catch (e) {
       console.warn('loadHistory error:', e);
       state.history = [];
+    }
+
+    if (DOM.impressionText2) {
+      DOM.impressionText2.addEventListener('input', () => {
+        const cleaned = sanitizeImpressionText(DOM.impressionText2.textContent);
+        if (cleaned !== DOM.impressionText2.textContent) DOM.impressionText2.textContent = cleaned;
+      });
+      DOM.impressionText2.addEventListener('blur', () => saveSecondary());
+      DOM.impressionText2.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); DOM.impressionText2.blur(); }});
     }
   }
 
@@ -360,6 +421,15 @@
       localStorage.setItem(CONFIG.HISTORY_KEY, JSON.stringify(state.history));
     } catch (e) {
       console.warn('saveHistory error:', e);
+    }
+
+    if (DOM.impressionText2) {
+      DOM.impressionText2.addEventListener('input', () => {
+        const cleaned = sanitizeImpressionText(DOM.impressionText2.textContent);
+        if (cleaned !== DOM.impressionText2.textContent) DOM.impressionText2.textContent = cleaned;
+      });
+      DOM.impressionText2.addEventListener('blur', () => saveSecondary());
+      DOM.impressionText2.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); DOM.impressionText2.blur(); }});
     }
   }
 
@@ -386,6 +456,15 @@
     // Only update UI if modal is open
     if (DOM.settingsModal?.getAttribute('aria-hidden') === 'false') {
       renderHistory();
+    }
+
+    if (DOM.impressionText2) {
+      DOM.impressionText2.addEventListener('input', () => {
+        const cleaned = sanitizeImpressionText(DOM.impressionText2.textContent);
+        if (cleaned !== DOM.impressionText2.textContent) DOM.impressionText2.textContent = cleaned;
+      });
+      DOM.impressionText2.addEventListener('blur', () => saveSecondary());
+      DOM.impressionText2.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); DOM.impressionText2.blur(); }});
     }
   }
 
@@ -453,6 +532,15 @@
       more.textContent = `... and ${state.history.length - CONFIG.HISTORY_DISPLAY_ITEMS} more`;
       DOM.historyListEl.appendChild(more);
     }
+
+    if (DOM.impressionText2) {
+      DOM.impressionText2.addEventListener('input', () => {
+        const cleaned = sanitizeImpressionText(DOM.impressionText2.textContent);
+        if (cleaned !== DOM.impressionText2.textContent) DOM.impressionText2.textContent = cleaned;
+      });
+      DOM.impressionText2.addEventListener('blur', () => saveSecondary());
+      DOM.impressionText2.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); DOM.impressionText2.blur(); }});
+    }
   }
 
   /**
@@ -488,6 +576,15 @@
       console.warn('loadUndoStack error:', e);
       state.undoStack = [];
     }
+
+    if (DOM.impressionText2) {
+      DOM.impressionText2.addEventListener('input', () => {
+        const cleaned = sanitizeImpressionText(DOM.impressionText2.textContent);
+        if (cleaned !== DOM.impressionText2.textContent) DOM.impressionText2.textContent = cleaned;
+      });
+      DOM.impressionText2.addEventListener('blur', () => saveSecondary());
+      DOM.impressionText2.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); DOM.impressionText2.blur(); }});
+    }
   }
 
   /**
@@ -498,6 +595,15 @@
       localStorage.setItem(CONFIG.UNDO_KEY, JSON.stringify(state.undoStack));
     } catch (e) {
       console.warn('saveUndoStack error:', e);
+    }
+
+    if (DOM.impressionText2) {
+      DOM.impressionText2.addEventListener('input', () => {
+        const cleaned = sanitizeImpressionText(DOM.impressionText2.textContent);
+        if (cleaned !== DOM.impressionText2.textContent) DOM.impressionText2.textContent = cleaned;
+      });
+      DOM.impressionText2.addEventListener('blur', () => saveSecondary());
+      DOM.impressionText2.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); DOM.impressionText2.blur(); }});
     }
   }
 
@@ -685,6 +791,15 @@
         console.warn('theme save failed:', e);
       }
     }
+
+    if (DOM.impressionText2) {
+      DOM.impressionText2.addEventListener('input', () => {
+        const cleaned = sanitizeImpressionText(DOM.impressionText2.textContent);
+        if (cleaned !== DOM.impressionText2.textContent) DOM.impressionText2.textContent = cleaned;
+      });
+      DOM.impressionText2.addEventListener('blur', () => saveSecondary());
+      DOM.impressionText2.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); DOM.impressionText2.blur(); }});
+    }
   }
 
   /**
@@ -703,6 +818,57 @@
     } catch (e) {
       console.warn('load theme:', e);
     }
+
+    if (DOM.impressionText2) {
+      DOM.impressionText2.addEventListener('input', () => {
+        const cleaned = sanitizeImpressionText(DOM.impressionText2.textContent);
+        if (cleaned !== DOM.impressionText2.textContent) DOM.impressionText2.textContent = cleaned;
+      });
+      DOM.impressionText2.addEventListener('blur', () => saveSecondary());
+      DOM.impressionText2.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); DOM.impressionText2.blur(); }});
+    }
+  }
+
+  function loadImpression() {
+    if (!DOM.impressionText) return;
+    try {
+      const saved = localStorage.getItem(CONFIG.IMPRESSION_KEY);
+      const nextText = sanitizeImpressionText(saved || 'Impression') || 'Impression';
+      DOM.impressionText.textContent = nextText;
+    } catch (e) {
+      DOM.impressionText.textContent = 'Impression';
+    }
+
+    if (DOM.impressionText2) {
+      DOM.impressionText2.addEventListener('input', () => {
+        const cleaned = sanitizeImpressionText(DOM.impressionText2.textContent);
+        if (cleaned !== DOM.impressionText2.textContent) DOM.impressionText2.textContent = cleaned;
+      });
+      DOM.impressionText2.addEventListener('blur', () => saveSecondary());
+      DOM.impressionText2.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); DOM.impressionText2.blur(); }});
+    }
+  }
+
+  function saveImpression(text) {
+    try {
+      localStorage.setItem(CONFIG.IMPRESSION_KEY, sanitizeImpressionText(text) || 'Impression');
+    } catch (e) {
+      console.warn('impression save failed:', e);
+    }
+
+    if (DOM.impressionText2) {
+      DOM.impressionText2.addEventListener('input', () => {
+        const cleaned = sanitizeImpressionText(DOM.impressionText2.textContent);
+        if (cleaned !== DOM.impressionText2.textContent) DOM.impressionText2.textContent = cleaned;
+      });
+      DOM.impressionText2.addEventListener('blur', () => saveSecondary());
+      DOM.impressionText2.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); DOM.impressionText2.blur(); }});
+    }
+  }
+
+  function getGlassOpacityValue() {
+    if (!DOM.glassOpacity) return 0.45;
+    return Number(DOM.glassOpacity.value) || 0.45;
   }
 
   function loadImpression() {
@@ -768,6 +934,7 @@
    */
   function render() {
     DOM.countEl.textContent = String(state.count);
+    if (DOM.countEl2) DOM.countEl2.textContent = String(state.secondary.count);
     renderMeta();
   }
 
@@ -777,6 +944,8 @@
   function renderMeta() {
     DOM.startedAtEl.textContent = formatTimestamp(state.startedAt);
     DOM.lastSavedEl.textContent = formatTimestamp(state.lastSaved);
+    if (DOM.startedAtEl2) DOM.startedAtEl2.textContent = formatTimestamp(state.secondary.startedAt);
+    if (DOM.lastSavedEl2) DOM.lastSavedEl2.textContent = formatTimestamp(state.secondary.lastSaved);
   }
 
   /**
@@ -883,8 +1052,24 @@
       else if (action === 'dec') changeBy(-Math.abs(value));
     });
 
+    DOM.controls2?.addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-action]');
+      if (!btn) return;
+      const action = btn.dataset.action;
+      const value = Number(btn.dataset.value || 0);
+      if (action === 'inc') changeBySecondary(Math.abs(value));
+      else if (action === 'dec') changeBySecondary(-Math.abs(value));
+    });
+
     // ---- RESET BUTTON ----
     DOM.resetBtn.addEventListener('click', resetCounter);
+    DOM.resetBtn2?.addEventListener('click', () => {
+      const ok = confirm('Reset secondary counter?');
+      if (!ok) return;
+      state.secondary.count = 0;
+      state.secondary.history.unshift({ when: nowISO(), delta: 0, newCount: 0 });
+      render(); renderSecondaryHistory(); saveSecondary();
+    });
 
     // ---- AUTO-SAVE ----
     setInterval(() => saveState(), CONFIG.SAVE_INTERVAL);
@@ -895,8 +1080,14 @@
 
     // ---- MODAL MANAGEMENT ----
     DOM.settingsBtn.addEventListener('click', openModal);
-    if (DOM.statsBtn) {
-      DOM.statsBtn.addEventListener('click', showStatistics);
+    if (DOM.addMeterBtn) {
+      DOM.addMeterBtn.addEventListener('click', () => {
+        if (state.secondary.enabled) return;
+        state.secondary.enabled = true;
+        state.secondary.startedAt = nowISO();
+        renderSecondaryVisibility();
+        saveSecondary();
+      });
     }
     DOM.modalClose.addEventListener('click', closeModal);
 
@@ -942,6 +1133,21 @@
       animatePulse(DOM.meter);
       recordHistory(v, 'set');
     });
+    DOM.decManual2?.addEventListener('click', () => { DOM.manualNumber2.value = Math.max(0, Number(DOM.manualNumber2.value) - 1); });
+    DOM.incManual2?.addEventListener('click', () => { DOM.manualNumber2.value = Number(DOM.manualNumber2.value) + 1; });
+    DOM.applyAdd2?.addEventListener('click', () => changeBySecondary(Number(DOM.manualNumber2.value) || 0));
+    DOM.applySub2?.addEventListener('click', () => changeBySecondary(-(Number(DOM.manualNumber2.value) || 0)));
+    DOM.setExact2?.addEventListener('click', () => {
+      state.secondary.count = Math.max(0, Number(DOM.manualNumber2.value) || 0);
+      state.secondary.history.unshift({ when: nowISO(), delta: 0, newCount: state.secondary.count });
+      render(); renderSecondaryHistory(); saveSecondary();
+    });
+    DOM.secondaryDeleteBtn?.addEventListener('click', () => {
+      const ok = confirm('Delete secondary click meter?');
+      if (!ok) return;
+      state.secondary = { enabled:false, count:0, startedAt:null, lastSaved:null, history:[] };
+      renderSecondaryVisibility(); renderSecondaryHistory(); render(); saveSecondary();
+    });
 
     // ---- THEME CONTROLS ----
     DOM.previewTheme.addEventListener('click', () => {
@@ -986,6 +1192,15 @@
     if (DOM.clearHistoryBtn) {
       DOM.clearHistoryBtn.addEventListener('click', () => clearHistory(true));
     }
+    if (DOM.clearHistoryBtn2) {
+      DOM.clearHistoryBtn2.addEventListener('click', () => {
+        const ok = confirm('Clear secondary history?');
+        if (!ok) return;
+        state.secondary.history = [];
+        renderSecondaryHistory();
+        saveSecondary();
+      });
+    }
 
     // ---- KEYBOARD SHORTCUTS ----
     document.addEventListener('keydown', (e) => {
@@ -1007,10 +1222,7 @@
         return;
       }
 
-      if (e.key === 's' || e.key === 'S') {
-        e.preventDefault();
-        showStatistics();
-      }
+      // 's' reserved; no stats popup now
       if (e.key === 'e' || e.key === 'E') {
         e.preventDefault();
         exportData();
@@ -1049,6 +1261,75 @@
         }
       });
     }
+
+    if (DOM.impressionText2) {
+      DOM.impressionText2.addEventListener('input', () => {
+        const cleaned = sanitizeImpressionText(DOM.impressionText2.textContent);
+        if (cleaned !== DOM.impressionText2.textContent) DOM.impressionText2.textContent = cleaned;
+      });
+      DOM.impressionText2.addEventListener('blur', () => saveSecondary());
+      DOM.impressionText2.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); DOM.impressionText2.blur(); }});
+    }
+  }
+
+
+  function renderSecondaryVisibility() {
+    const on = state.secondary.enabled;
+    if (DOM.secondaryCard) DOM.secondaryCard.classList.toggle('hidden', !on);
+    if (DOM.secondaryManualSection) DOM.secondaryManualSection.classList.toggle('hidden', !on);
+    if (DOM.secondaryHistorySection) DOM.secondaryHistorySection.classList.toggle('hidden', !on);
+    if (DOM.addMeterBtn) DOM.addMeterBtn.disabled = on;
+  }
+
+  function renderSecondaryHistory() {
+    if (!DOM.historyListEl2) return;
+    DOM.historyListEl2.innerHTML = '';
+    if (!state.secondary.history.length) {
+      const empty = document.createElement('div');
+      empty.className = 'history-item';
+      empty.textContent = 'No history yet.';
+      DOM.historyListEl2.appendChild(empty);
+      return;
+    }
+    for (const h of state.secondary.history.slice(0, CONFIG.HISTORY_DISPLAY_ITEMS)) {
+      const item = document.createElement('div');
+      item.className = 'history-item';
+      item.textContent = `${h.delta > 0 ? '+' : ''}${h.delta} → ${h.newCount} · ${formatTimestamp(h.when)}`;
+      DOM.historyListEl2.appendChild(item);
+    }
+
+    if (DOM.impressionText2) {
+      DOM.impressionText2.addEventListener('input', () => {
+        const cleaned = sanitizeImpressionText(DOM.impressionText2.textContent);
+        if (cleaned !== DOM.impressionText2.textContent) DOM.impressionText2.textContent = cleaned;
+      });
+      DOM.impressionText2.addEventListener('blur', () => saveSecondary());
+      DOM.impressionText2.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); DOM.impressionText2.blur(); }});
+    }
+  }
+
+  function changeBySecondary(delta) {
+    if (!state.secondary.enabled) return;
+    const newVal = Number(state.secondary.count) + Number(delta);
+    state.secondary.count = Math.max(0, newVal);
+    state.secondary.history.unshift({ when: nowISO(), delta: Number(delta), newCount: state.secondary.count });
+    if (state.secondary.history.length > CONFIG.HISTORY_MAX_ITEMS) state.secondary.history.length = CONFIG.HISTORY_MAX_ITEMS;
+    saveHistory();
+    saveState();
+    render();
+    renderSecondaryHistory();
+    animatePulse(DOM.meter2);
+  }
+
+  function saveSecondary() {
+    localStorage.setItem(CONFIG.SECONDARY_KEY, JSON.stringify({
+      enabled: state.secondary.enabled,
+      count: state.secondary.count,
+      startedAt: state.secondary.startedAt,
+      lastSaved: state.secondary.lastSaved
+    }));
+    localStorage.setItem(CONFIG.SECONDARY_HISTORY_KEY, JSON.stringify(state.secondary.history));
+    localStorage.setItem(CONFIG.SECONDARY_IMPRESSION_KEY, DOM.impressionText2?.textContent || 'Impression');
   }
 
   // ============================================================================
@@ -1066,6 +1347,12 @@
     initListeners();
     loadTheme();
     loadImpression();
+    try {
+      const imp2 = localStorage.getItem(CONFIG.SECONDARY_IMPRESSION_KEY);
+      if (DOM.impressionText2) DOM.impressionText2.textContent = sanitizeImpressionText(imp2 || 'Impression') || 'Impression';
+    } catch (e) {}
+    renderSecondaryVisibility();
+    renderSecondaryHistory();
 
     // Add CSS animation keyframes dynamically
     const style = document.createElement('style');

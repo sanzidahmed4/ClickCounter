@@ -171,6 +171,51 @@ input, button, textarea, select {
   align-items:center;
   gap:16px;
 }
+.hidden{ display:none !important; }
+.meters-wrap{
+  width:100%;
+  display:flex;
+  gap:16px;
+  align-items:flex-start;
+  justify-content:center;
+}
+.meter-card{
+  flex:1 1 0;
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:16px;
+  position:relative;
+}
+.secondary-delete{
+  position:absolute;
+  right:6px;
+  top:-8px;
+  z-index:2;
+}
+
+.impression-text{
+  min-height: 30px;
+  min-width: 140px;
+  max-width: 240px;
+  text-align:center;
+  color: var(--accent-white);
+  opacity: 0.5;
+  font-size: 36px;
+  line-height: 1.1;
+  font-family: "Roboto", "Inter", "Segoe UI", Arial, sans-serif;
+  font-weight: 400;
+  border: 0;
+  outline: none;
+  background: transparent;
+  cursor: text;
+  user-select: text;
+}
+.impression-text:empty::before{
+  content: attr(data-placeholder);
+  opacity: 0.9;
+}
 
 .impression-text{
   min-height: 30px;
@@ -581,6 +626,7 @@ kbd{
 
 /* RESPONSIVE ADJUSTMENTS */
 @media (max-width:760px){
+  .meters-wrap{ flex-direction:column; }
   .scene{ padding:18px; }
   .meter{ height:220px; border-radius:36px; }
 }

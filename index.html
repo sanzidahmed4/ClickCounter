@@ -1,6 +1,15 @@
 <!doctype html>
 <html lang="bn">
 <head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-9FTDWYRNNS"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-9FTDWYRNNS');
+  </script>
   <meta charset="utf-8" />
   <!-- viewport kept correct; do NOT lock maximum-scale to preserve accessibility -->
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -39,10 +48,9 @@
     </div>
 
     <div class="header-right">
-      <button id="statsBtn" class="icon-btn" aria-label="Show statistics (press 's')" title="Show statistics">
+      <button id="addMeterBtn" class="icon-btn" aria-label="Add secondary meter" title="Add secondary meter">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"
-            d="M3 12h3v6H3zM8 8h3v10H8zM13 4h3v14h-3zM18 10h3v8h-3z"></path>
+          <path stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"></path>
         </svg>
       </button>
       <button id="settingsBtn" class="icon-btn" aria-haspopup="dialog" aria-controls="settingsModal" title="Settings">
@@ -59,6 +67,8 @@
   <!-- SCENE — শুধু counter app থাকবে -->
   <div class="scene">
     <main class="app">
+      <div class="meters-wrap" id="metersWrap">
+      <section class="meter-card" id="mainCard">
       <div
         id="impressionText"
         class="impression-text"
@@ -87,6 +97,27 @@
       <div class="meta">
         <div>Session started: <span id="startedAt">—</span></div>
         <div>Last saved: <span id="lastSaved">—</span></div>
+      </div>
+      </section>
+
+      <section class="meter-card secondary-card hidden" id="secondaryCard">
+        <button id="secondaryDeleteBtn" class="icon-btn secondary-delete" title="Delete secondary meter" aria-label="Delete secondary meter">🗑</button>
+        <div id="impressionText2" class="impression-text" contenteditable="true" role="textbox" spellcheck="false" data-placeholder="Impression">Impression</div>
+        <div class="meter" id="meter2" role="button" tabindex="0" aria-label="Secondary click meter">
+          <div id="count2" class="count">0</div>
+        </div>
+        <div class="controls" id="controls2">
+          <button class="pill pill-red" data-action="dec" data-value="-1">− 1</button>
+          <button class="pill pill-red" data-action="inc" data-value="1">+ 1</button>
+          <button class="pill pill-red" data-action="inc" data-value="5">+ 5</button>
+          <button class="pill pill-red" data-action="inc" data-value="10">+ 10</button>
+          <button class="pill pill-red" id="resetBtn2">⟳ RESET</button>
+        </div>
+        <div class="meta">
+          <div>Secondary started: <span id="startedAt2">—</span></div>
+          <div>Last saved: <span id="lastSaved2">—</span></div>
+        </div>
+      </section>
       </div>
     </main>
 
@@ -124,6 +155,20 @@
               <button class="pill pill-red compact-btn" id="applyAdd" title="Add this number">Add</button>
               <button class="pill pill-red compact-btn" id="applySub" title="Subtract this number">Subtract</button>
               <button class="pill pill-red compact-btn" id="setExact" title="Set exact value">Set exact</button>
+            </div>
+          </div>
+
+          <div class="manual-number hidden" id="secondaryManualSection">
+            <label>Secondary manual adjust number</label>
+            <div class="manual-controls">
+              <button class="pill pill-red compact-btn" id="decManual2">−</button>
+              <input type="number" id="manualNumber2" value="1" min="0" />
+              <button class="pill pill-red compact-btn" id="incManual2">+</button>
+            </div>
+            <div class="manual-actions">
+              <button class="pill pill-red compact-btn" id="applyAdd2">Add</button>
+              <button class="pill pill-red compact-btn" id="applySub2">Subtract</button>
+              <button class="pill pill-red compact-btn" id="setExact2">Set exact</button>
             </div>
           </div>
 
@@ -187,6 +232,14 @@
             </div>
             <div id="historyList" class="history-list" role="log" aria-atomic="false">
             </div>
+          </div>
+
+          <div class="history-section hidden" id="secondaryHistorySection" aria-live="polite">
+            <div class="history-header">
+              <label>Secondary click history</label>
+              <div class="history-actions"><button class="pill pill-yellow" id="clearHistory2">Clear</button></div>
+            </div>
+            <div id="historyList2" class="history-list" role="log"></div>
           </div>
 
         </section>
