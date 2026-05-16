@@ -32,7 +32,7 @@
     ANIMATION_DURATION: 220, // ms
     SHOW_SAVE_TOAST: false,
     
-    MILESTONE_THRESHOLDS: [10, 50, 100, 500, 1000, 5000, 10000],
+    MILESTONE_THRESHOLDS: [50, 100, 500, 1000, 5000, 10000],
   };
 
   const MESSAGES = {
@@ -40,7 +40,7 @@
     CLEAR_HISTORY: 'আপনি কি ক্লিক হিস্ট্রি মুছে ফেলতে চান?',
     RESET_THEME: 'Reset to default theme?',
     THEME_SAVED: 'Theme saved and applied for this session.',
-    MILESTONE: (num) => `🎉 Milestone reached: ${num} clicks!`,
+    MILESTONE: (num) => `Milestone reached: ${num} clicks!`,
   };
 
   const KEYBOARD_SHORTCUTS = {

@@ -14,8 +14,17 @@
   <!-- viewport kept correct; do NOT lock maximum-scale to preserve accessibility -->
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Click Count</title>
+  <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-9FTDWYRNNS"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-9FTDWYRNNS');
+</script>
   <link rel="stylesheet" href="styles.css" />
-  <link rel="icon" href="logo.png">
+  <link rel="icon" href="logo.svg">
 </head>
 <body>
   <!-- HEADER — body এর একদম উপরে থাকবে (scene এর বাইরে) -->
@@ -77,7 +86,7 @@
 
       <div class="controls">
         <button class="pill pill-red" data-action="dec" data-value="-1" title="Decrease by 1 (-)">− 1</button>
-        <button class="pill pill-red" data-action="inc" data-value="1" title="Increase by 1 (+)">+ 1</button>
+       <!-- <button class="pill pill-red" data-action="inc" data-value="1" title="Increase by 1 (+)">+ 1</button> --> 
         <button class="pill pill-red" data-action="inc" data-value="5" title="Increase by 5">+ 5</button>
         <button class="pill pill-red" data-action="inc" data-value="10" title="Increase by 10">+ 10</button>
         <button class="pill pill-red" id="resetBtn" data-action="reset" title="Reset counter (r)">
