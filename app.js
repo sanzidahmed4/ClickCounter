@@ -70,7 +70,6 @@
     resetBtn: document.getElementById('resetBtn'),
     resetBtn2: document.getElementById('resetBtn2'),
     secondaryCard: document.getElementById('secondaryCard'),
-    secondaryDeleteBtn: document.getElementById('secondaryDeleteBtn'),
     
     // Meta display
     startedAtEl: document.getElementById('startedAt'),
@@ -1065,11 +1064,17 @@
     DOM.settingsBtn.addEventListener('click', openModal);
     if (DOM.addMeterBtn) {
       DOM.addMeterBtn.addEventListener('click', () => {
-        if (state.secondary.enabled) return;
-        state.secondary.enabled = true;
-        state.secondary.startedAt = nowISO();
-        renderSecondaryVisibility();
-        saveSecondary();
+        if (!state.secondary.enabled) {
+          state.secondary.enabled = true;
+          if (!state.secondary.startedAt) state.secondary.startedAt = nowISO();
+          renderSecondaryVisibility();
+          saveSecondary();
+          return;
+        }
+        const ok = confirm('Delete secondary click meter?');
+        if (!ok) return;
+        state.secondary = { enabled:false, count:0, startedAt:null, lastSaved:null, history:[] };
+        renderSecondaryVisibility(); renderSecondaryHistory(); render(); saveSecondary();
       });
     }
     DOM.modalClose.addEventListener('click', closeModal);
@@ -1124,12 +1129,6 @@
       state.secondary.count = Math.max(0, Number(DOM.manualNumber2.value) || 0);
       state.secondary.history.unshift({ when: nowISO(), delta: 0, newCount: state.secondary.count });
       render(); renderSecondaryHistory(); saveSecondary();
-    });
-    DOM.secondaryDeleteBtn?.addEventListener('click', () => {
-      const ok = confirm('Delete secondary click meter?');
-      if (!ok) return;
-      state.secondary = { enabled:false, count:0, startedAt:null, lastSaved:null, history:[] };
-      renderSecondaryVisibility(); renderSecondaryHistory(); render(); saveSecondary();
     });
 
     // ---- THEME CONTROLS ----
@@ -1256,12 +1255,28 @@
   }
 
 
+  function updateSecondaryToggleButton() {
+    if (!DOM.addMeterBtn) return;
+    if (state.secondary.enabled) {
+      DOM.addMeterBtn.setAttribute('aria-label', 'Delete secondary meter');
+      DOM.addMeterBtn.setAttribute('title', 'Delete secondary meter');
+      DOM.addMeterBtn.textContent = '🗑';
+    } else {
+      DOM.addMeterBtn.setAttribute('aria-label', 'Add secondary meter');
+      DOM.addMeterBtn.setAttribute('title', 'Add secondary meter');
+      DOM.addMeterBtn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"></path>
+        </svg>`;
+    }
+  }
+
   function renderSecondaryVisibility() {
     const on = state.secondary.enabled;
     if (DOM.secondaryCard) DOM.secondaryCard.classList.toggle('hidden', !on);
     if (DOM.secondaryManualSection) DOM.secondaryManualSection.classList.toggle('hidden', !on);
     if (DOM.secondaryHistorySection) DOM.secondaryHistorySection.classList.toggle('hidden', !on);
-    if (DOM.addMeterBtn) DOM.addMeterBtn.disabled = on;
+    document.getElementById('metersWrap')?.classList.toggle('two-meters', on);
+    updateSecondaryToggleButton();
   }
 
   function renderSecondaryHistory() {
@@ -1299,12 +1314,14 @@
     if (state.secondary.history.length > CONFIG.HISTORY_MAX_ITEMS) state.secondary.history.length = CONFIG.HISTORY_MAX_ITEMS;
     saveHistory();
     saveState();
+    saveSecondary();
     render();
     renderSecondaryHistory();
     animatePulse(DOM.meter2);
   }
 
   function saveSecondary() {
+    state.secondary.lastSaved = nowISO();
     localStorage.setItem(CONFIG.SECONDARY_KEY, JSON.stringify({
       enabled: state.secondary.enabled,
       count: state.secondary.count,
