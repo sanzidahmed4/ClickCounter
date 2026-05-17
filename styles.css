@@ -181,12 +181,20 @@ input, button, textarea, select {
 }
 .meters-wrap.two-meters{
   max-width: 980px;
+  position: relative;
 }
 .meters-wrap.two-meters .meter-card{
   padding: 0 14px;
 }
-.meters-wrap.two-meters .meter-card:first-child{
-  border-right: 1px solid rgba(255,255,255,0.35);
+.meters-wrap.two-meters::before{
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 6px;
+  bottom: 6px;
+  width: 1px;
+  transform: translateX(-50%);
+  background: rgba(255,255,255,0.35);
 }
 .meters-wrap.two-meters .meter{
   max-width: 720px;
@@ -508,6 +516,7 @@ kbd{
 /* RESPONSIVE ADJUSTMENTS */
 @media (max-width:760px){
   .meters-wrap{ flex-direction:column; }
+  .meters-wrap.two-meters::before{ display:none; }
   .meters-wrap.two-meters .meter-card:first-child{ border-right:0; border-bottom:1px solid rgba(255,255,255,0.28); padding-bottom:14px; }
   .meters-wrap.two-meters .controls{ flex-wrap:wrap; }
   .scene{ padding:18px; }
