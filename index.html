@@ -14,15 +14,7 @@
   <!-- viewport kept correct; do NOT lock maximum-scale to preserve accessibility -->
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Click Count</title>
-  <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-9FTDWYRNNS"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-9FTDWYRNNS');
-</script>
+  <meta name="description" content="ClickCounter is a fast, keyboard-friendly click counting app with history, backup, and custom themes." />
   <link rel="stylesheet" href="styles.css" />
   <link rel="icon" href="logo.svg">
 </head>
@@ -35,7 +27,7 @@
           <div class="brand-token" aria-hidden="true">
             <picture>
               <source srcset="logo.svg" type="image/svg+xml" />
-              <img src="logo.png" alt="" class="brand-logo" />
+              <img src="logo.png" alt="Affilancers logo" class="brand-logo" loading="lazy" decoding="async" />
             </picture>
           </div>
           <div class="brand-word">Affilancers</div>
@@ -101,7 +93,6 @@
       </section>
 
       <section class="meter-card secondary-card hidden" id="secondaryCard">
-        <button id="secondaryDeleteBtn" class="icon-btn secondary-delete" title="Delete secondary meter" aria-label="Delete secondary meter">🗑</button>
         <div id="impressionText2" class="impression-text" contenteditable="true" role="textbox" spellcheck="false" data-placeholder="Impression">Impression</div>
         <div class="meter" id="meter2" role="button" tabindex="0" aria-label="Secondary click meter">
           <div id="count2" class="count">0</div>

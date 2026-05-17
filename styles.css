@@ -179,6 +179,35 @@ input, button, textarea, select {
   align-items:flex-start;
   justify-content:center;
 }
+.meters-wrap.two-meters{
+  max-width: 980px;
+  position: relative;
+}
+.meters-wrap.two-meters .meter-card{
+  padding: 0 14px;
+}
+.meters-wrap.two-meters::before{
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 6px;
+  bottom: 6px;
+  width: 1px;
+  transform: translateX(-50%);
+  background: rgba(255,255,255,0.35);
+}
+.meters-wrap.two-meters .meter{
+  max-width: 720px;
+}
+.meters-wrap.two-meters .controls{
+  gap: 10px;
+  flex-wrap: nowrap;
+}
+.meters-wrap.two-meters .pill{
+  min-width: 66px;
+  padding: 10px 12px;
+  font-size: 15px;
+}
 .meter-card{
   flex:1 1 0;
   min-width:0;
@@ -188,13 +217,6 @@ input, button, textarea, select {
   gap:16px;
   position:relative;
 }
-.secondary-delete{
-  position:absolute;
-  right:6px;
-  top:-8px;
-  z-index:2;
-}
-
 .impression-text{
   min-height: 30px;
   min-width: 140px;
@@ -202,7 +224,7 @@ input, button, textarea, select {
   text-align:center;
   color: var(--accent-white);
   opacity: 0.5;
-  font-size: 36px;
+  font-size: 22px;
   line-height: 1.1;
   font-family: "Roboto", "Inter", "Segoe UI", Arial, sans-serif;
   font-weight: 400;
@@ -494,6 +516,9 @@ kbd{
 /* RESPONSIVE ADJUSTMENTS */
 @media (max-width:760px){
   .meters-wrap{ flex-direction:column; }
+  .meters-wrap.two-meters::before{ display:none; }
+  .meters-wrap.two-meters .meter-card:first-child{ border-right:0; border-bottom:1px solid rgba(255,255,255,0.28); padding-bottom:14px; }
+  .meters-wrap.two-meters .controls{ flex-wrap:wrap; }
   .scene{ padding:18px; }
   .meter{ height:220px; border-radius:36px; }
 }
